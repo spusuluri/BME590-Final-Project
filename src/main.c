@@ -7,6 +7,7 @@
 *5. Check the errors in the main 
 *6. While Loop read_adc channels and output voltages
 *7. Set Up Logging
+*8 Set Up 3 LEDS
  */
 
 #include <zephyr/kernel.h>
