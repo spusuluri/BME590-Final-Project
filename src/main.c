@@ -6,6 +6,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pwm.h>
+#include <nrfx_power.h>
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS   1000
