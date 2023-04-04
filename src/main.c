@@ -1,6 +1,5 @@
 /*
 *To-Do List: 
-*1. Set Up Overlay for ADC & PWM
 *2. Intiliaze PWM & ADC 
 *3. Declare setup channels, check_interfaces,and read_adc
 *4. Write the code for setup channels, and check_interfaces
