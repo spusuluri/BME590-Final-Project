@@ -1,7 +1,12 @@
 /*
- * Copyright (c) 2016 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
+*To-Do List: 
+*1. Set Up Overlay for ADC & PWM
+*2. Intiliaze PWM & ADC 
+*3. Declare setup channels, check_interfaces,and read_adc
+*4. Write the code for setup channels, and check_interfaces
+*5. Check the errors in the main 
+*6. While Loop read_adc channels and output voltages
+*7. Set Up Logging
  */
 
 #include <zephyr/kernel.h>
