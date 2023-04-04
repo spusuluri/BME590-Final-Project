@@ -1,11 +1,9 @@
 /*
 *To-Do List: 
-*2. Intiliaze PWM & ADC 
 *3. Declare setup channels, check_interfaces,and read_adc
 *4. Write the code for setup channels, and check_interfaces
 *5. Check the errors in the main 
 *6. While Loop read_adc channels and output voltages
-*7. Set Up Logging
 *8 Set Up 3 LEDS
  */
 
@@ -16,8 +14,28 @@
 #include <zephyr/drivers/pwm.h>
 #include <nrfx_power.h>
 
-/* 1000 msec = 1 sec */
-#define SLEEP_TIME_MS   1000
+LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
+
+
+#define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
+    {                                                            \
+        .dev = DEVICE_DT_GET(DT_PARENT(DT_ALIAS(node_id))),        \
+        .channel_id = DT_REG_ADDR(DT_ALIAS(node_id)),            \
+        ADC_CHANNEL_CFG_FROM_DT_NODE(DT_ALIAS(node_id))            \
+    }                                                            \
+
+#define DT_SPEC_AND_COMMA(node_id, prop, idx) \
+	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+
+/* ADC channels (specified in DT overlay) */
+
+static const struct adc_dt_spec adc_sin100 = ADC_DT_SPEC_GET_BY_ALIAS(sin100);
+static const struct adc_dt_spec adc_sin500 = ADC_DT_SPEC_GET_BY_ALIAS(sin500);
+
+/* PWM Channels*/
+static const struct pwm_dt_spec mtr_drv1 = PWM_DT_SPEC_GET(DT_ALIAS(drv1)); 
+static const struct pwm_dt_spec mtr_drv2 = PWM_DT_SPEC_GET(DT_ALIAS(drv2));
+
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
@@ -46,6 +64,6 @@ void main(void)
 		if (ret < 0) {
 			return;
 		}
-		k_msleep(SLEEP_TIME_MS);
+		k_msleep(1000);
 	}
 }
