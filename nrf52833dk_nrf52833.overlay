@@ -17,8 +17,8 @@
     aliases{
 		drv1 = &in1;
 		drv2 = &in2;
-        reslow = &reslow;
-        reshigh = &reshigh;
+        sin100 = &reslow;
+        sin500 = &reshigh;
     };
 	pwm_mtr{
 		compatible = "pwm-leds";
