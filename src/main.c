@@ -1,9 +1,8 @@
 /*
 *To-Do List: 
-*6. While Loop read_adc channels and output voltages
-*8 Set Up 3 LEDS
+1. Test that it works
+2. Write Function that does PWM of LEDs
  */
-
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -59,13 +58,14 @@ void main(void)
 	if (err){
 		LOG_ERR("Error configuring IO pins (err = %d", err);
 	}
-
+	gpio_pin_set_dt(&board_led1, 1);
+	gpio_pin_set_dt(&board_led2, 1);
 	while (1) {
-		err = gpio_pin_toggle_dt(&board_led1);
-		if (err < 0) {
-			return;
-		}
-		k_msleep(1000);
+		k_msleep(2000);
+		adc_sin100_mV = read_adc(adc_sin100);
+		adc_sin500_mV = read_adc(adc_sin500);
+		LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
+		LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
