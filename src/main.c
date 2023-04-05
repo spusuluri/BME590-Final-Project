@@ -44,6 +44,20 @@ static int adc_sin500_mV;
 int setup_channels_and_pins(void);
 int check_interfaces_ready(void);
 int read_adc(struct adc_dt_spec adc_channel);
+void read_adc_sin100(struct k_timer *adc_sin100_timer);
+void read_adc_sin500(struct k_timer *adc_sin500_timer);
+
+/* Define Timers*/
+K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
+K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
+
+/* Timer Functions*/
+void read_adc_sin100(struct k_timer *adc_sin100_timer){
+	adc_sin100_mV = read_adc(adc_sin100);
+}
+void read_adc_sin500(struct k_timer *adc_sin500_timer){
+	adc_sin500_mV = read_adc(adc_sin500);
+}
 
 
 
