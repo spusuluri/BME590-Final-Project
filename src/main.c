@@ -12,6 +12,10 @@
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
+#define ADC_SIN100_SAMPLE_RATE_MS 5
+#define ADC_SIN500_SAMPLE_RATE_MS 1
+#define ADC_SIN100_SAMPLE_SIZE 20
+#define ADC_SIN500_SAMPLE_SIZE 1000
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -39,6 +43,14 @@ static const struct gpio_dt_spec board_led3 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), g
 /* Static Variables*/
 static int adc_sin100_mV;
 static int adc_sin500_mV;
+static int adc_sin100_count;
+static int adc_sin500_count;
+static float adc_sin100_RMS;
+static float adc_sin500_RMS;
+
+/*Array Variables*/
+float sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0.0}; 
+float sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0.0}; 
 
 /*Declarations*/
 int setup_channels_and_pins(void);
@@ -54,12 +66,30 @@ K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
 	adc_sin100_mV = read_adc(adc_sin100);
+	LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
+	sin100_values_mV[adc_sin100_count] = adc_sin100_mV;
+	if (adc_sin100_count == ADC_SIN100_SAMPLE_SIZE-1){
+		adc_sin100_count = 0;
+	}
+	else{
+		adc_sin100_count++;
+	}
 }
 void read_adc_sin500(struct k_timer *adc_sin500_timer){
 	adc_sin500_mV = read_adc(adc_sin500);
+	LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
+	sin500_values_mV[adc_sin500_count] = adc_sin500_mV;
+	if (adc_sin500_count == ADC_SIN500_SAMPLE_SIZE-1){
+		adc_sin500_count = 0;
+	}
+	else{
+		adc_sin500_count++;
+	}
 }
 
-
+float calculate_rms(float sin_arr[], int sample_size){
+	return 0.0;
+}
 
 void main(void)
 {
@@ -74,12 +104,15 @@ void main(void)
 	}
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
+	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
+	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
 	while (1) {
-		k_msleep(2000);
+		/* KEEP THESE LINES IN CASE ITS DOESN"T WORK
 		adc_sin100_mV = read_adc(adc_sin100);
-		adc_sin500_mV = read_adc(adc_sin500);
-		LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
-		LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
+		adc_sin100_mV = read_adc(adc_sin100);
+		*/
+		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
+		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
@@ -164,8 +197,4 @@ int setup_channels_and_pins(void){
 	}
 	/* Need to Configure Buttons*/
 	return 0;
-}
-
-float calculate_rms(float arr[]){
-	return 0.0;
 }
