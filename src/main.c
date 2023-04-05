@@ -151,3 +151,7 @@ int setup_channels_and_pins(void){
 	/* Need to Configure Buttons*/
 	return 0;
 }
+
+float calculate_rms(float arr[]){
+	return 0.0;
+}
