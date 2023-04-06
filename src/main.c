@@ -65,12 +65,15 @@ K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
 
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
+	LOG_DBG("READ ADC");
+	/*
 	for (int i=0; i < ADC_SIN100_SAMPLE_SIZE - 1; i++){
 		sin100_values_mV[i] = sin100_values_mV[i+1];
 	}
-	adc_sin100_mV = read_adc(adc_sin100);
+		adc_sin100_mV = read_adc(adc_sin100);
 	LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 	sin100_values_mV[ADC_SIN100_SAMPLE_SIZE -1] = adc_sin100_mV;
+	*/
 }
 void read_adc_sin500(struct k_timer *adc_sin500_timer){
 	for (int i=0; i < ADC_SIN500_SAMPLE_SIZE - 1; i++){
@@ -102,9 +105,10 @@ void main(void)
 	}
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
-	//k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
+k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
 	//k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
 	while (1) {
+		k_msleep(1);
 		/*
 		adc_sin100_mV = read_adc(adc_sin100);
 		LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
