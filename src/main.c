@@ -1,7 +1,7 @@
 /*
 *To-Do List: 
-1. Test that it works
-2. Write Function that does PWM of LEDs
+1. 
+Read adc in while loop every so second put it in the back of array
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -108,7 +108,7 @@ void main(void)
 k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
 	//k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
 	while (1) {
-		k_msleep(1);
+		k_msleep(1); // Allow for Logging
 		/*
 		adc_sin100_mV = read_adc(adc_sin100);
 		LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
