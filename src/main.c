@@ -9,6 +9,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pwm.h>
 #include <nrfx_power.h>
+#include<math.h>
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
@@ -16,6 +17,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN500_SAMPLE_RATE_MS 1
 #define ADC_SIN100_SAMPLE_SIZE 20
 #define ADC_SIN500_SAMPLE_SIZE 1000
+
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -43,8 +45,6 @@ static const struct gpio_dt_spec board_led3 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), g
 /* Static Variables*/
 static int adc_sin100_mV;
 static int adc_sin500_mV;
-static int adc_sin100_count;
-static int adc_sin500_count;
 static float adc_sin100_RMS;
 static float adc_sin500_RMS;
 
@@ -65,30 +65,28 @@ K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
 
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
+	for (int i=0; i < ADC_SIN100_SAMPLE_SIZE - 1; i++){
+		sin100_values_mV[i] = sin100_values_mV[i+1];
+	}
 	adc_sin100_mV = read_adc(adc_sin100);
 	LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
-	sin100_values_mV[adc_sin100_count] = adc_sin100_mV;
-	if (adc_sin100_count == ADC_SIN100_SAMPLE_SIZE-1){
-		adc_sin100_count = 0;
-	}
-	else{
-		adc_sin100_count++;
-	}
+	sin100_values_mV[ADC_SIN100_SAMPLE_SIZE -1] = adc_sin100_mV;
 }
 void read_adc_sin500(struct k_timer *adc_sin500_timer){
+	for (int i=0; i < ADC_SIN500_SAMPLE_SIZE - 1; i++){
+		sin500_values_mV[i] = sin500_values_mV[i+1];
+	}
 	adc_sin500_mV = read_adc(adc_sin500);
 	LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
-	sin500_values_mV[adc_sin500_count] = adc_sin500_mV;
-	if (adc_sin500_count == ADC_SIN500_SAMPLE_SIZE-1){
-		adc_sin500_count = 0;
-	}
-	else{
-		adc_sin500_count++;
-	}
+	sin500_values_mV[ADC_SIN500_SAMPLE_SIZE -1] = adc_sin500_mV;
 }
 
 float calculate_rms(float sin_arr[], int sample_size){
-	return 0.0;
+	float array_sum = 0.0;
+	for (int i = 0; i < sample_size; i++){
+		array_sum += sin_arr[i] * sin_arr[i];
+	}
+	return sqrtf(array_sum / (float)sample_size);
 }
 
 void main(void)
@@ -107,7 +105,7 @@ void main(void)
 	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
 	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
 	while (1) {
-		/* KEEP THESE LINES IN CASE ITS DOESN"T WORK
+		/* KEEP THESE LINES IN CASE ITS DOESN'T WORK
 		adc_sin100_mV = read_adc(adc_sin100);
 		adc_sin100_mV = read_adc(adc_sin100);
 		*/
@@ -161,13 +159,11 @@ int check_interfaces_ready(void){
 	if (!device_is_ready(board_led1_drv.dev)) {
 		LOG_ERR("PWM Device %s is not ready.", board_led1_drv.dev->name);
 		return -1;
-	}
-	
+	}	
 	return 0;	
 }
 int setup_channels_and_pins(void){
 	int ret;
-
 	/* Setup ADC channels */
 	ret = adc_channel_setup_dt(&adc_sin100);
 	if (ret < 0) {
