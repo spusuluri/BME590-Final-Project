@@ -52,9 +52,9 @@
 		zephyr,gain = "ADC_GAIN_1_6";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,input-positive = <NRF_SAADC_AIN3>; 
-        zephyr,input-negative = <NRF_SAADC_AIN4>;
-		zephyr,resolution = <12>;
+		zephyr,input-positive = <NRF_SAADC_AIN4>; //P0.28
+        zephyr,input-negative = <NRF_SAADC_AIN5>; //P0.29
+		zephyr,resolution = <12>; //P0.31 (AIN7)
 	};
 
 	status = "okay";
