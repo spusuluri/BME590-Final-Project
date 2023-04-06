@@ -105,9 +105,11 @@ void main(void)
 	//k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
 	//k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
 	while (1) {
-		/* KEEP THESE LINES IN CASE ITS DOESN'T WORK
+		/*
 		adc_sin100_mV = read_adc(adc_sin100);
-		adc_sin100_mV = read_adc(adc_sin100);
+		LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
+		adc_sin500_mV = read_adc(adc_sin500);
+		LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 		*/
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
