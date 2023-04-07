@@ -115,8 +115,9 @@ k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_S
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = adc_sin100_RMS * VPP_CONV_RMS;
+		LOG_DBG("100 Hz Sinusoid VPP Value: %f", adc_sin100_VPP);
 		adc_sin500_VPP = adc_sin500_RMS * VPP_CONV_RMS;
-
+		//LOG_DBG("500 Hz Sinusoid VPP Value: %f", adc_sin500_VPP);
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
