@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN500_SAMPLE_RATE_MS 1
 #define ADC_SIN100_SAMPLE_SIZE 200
 #define ADC_SIN500_SAMPLE_SIZE 1000
-#define VPP_CONV_RMS (1 * M_SQRT2)
+#define VPP_CONV_RMS M_SQRT2
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
