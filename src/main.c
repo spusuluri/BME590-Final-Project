@@ -47,6 +47,8 @@ static int adc_sin100_mV = 0;
 static int adc_sin500_mV = 0;
 static float adc_sin100_RMS = 0.0;
 static float adc_sin500_RMS = 0.0;
+static float adc_sin100_VPP;
+static float adc_sin500_VPP;
 
 /*Array Variables*/
 int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0}; 
@@ -111,7 +113,10 @@ k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_S
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
-		LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
+		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
+		adc_sin100_VPP = adc_sin100_RMS * VPP_CONV_RMS;
+		adc_sin500_VPP = adc_sin500_RMS * VPP_CONV_RMS;
+
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
