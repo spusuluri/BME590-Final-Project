@@ -8,7 +8,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pwm.h>
 #include <nrfx_power.h>
-#include<math.h>
+#include <math.h>
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
