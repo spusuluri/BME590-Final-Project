@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN500_SAMPLE_RATE_MS 1
 #define ADC_SIN100_SAMPLE_SIZE 200
 #define ADC_SIN500_SAMPLE_SIZE 1000
-#define VPP_CONV_RMS (2 * M_SQRT2)
+#define VPP_CONV_RMS (1 * M_SQRT2)
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -105,17 +105,17 @@ void main(void)
 k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
 k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
 	while (1) {
-		k_msleep(1); // Allow for Logging (Change this line to ensure ADC values correct)
+		// Allow for Logging (Change this line to ensure ADC values correct)
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		adc_sin500_mV = read_adc(adc_sin500);
-		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
+		LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = adc_sin100_RMS * VPP_CONV_RMS;
-		LOG_DBG("100 Hz Sinusoid VPP Value: %f", adc_sin100_VPP);
+		//LOG_DBG("100 Hz Sinusoid VPP Value: %f", adc_sin100_VPP);
 		adc_sin500_VPP = adc_sin500_RMS * VPP_CONV_RMS;
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %f", adc_sin500_VPP);
 	}
