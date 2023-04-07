@@ -1,7 +1,7 @@
 /*
 *To-Do List: 
-1. 
-Read adc in while loop every so second put it in the back of array
+1. Ensure ADC values correct
+2. Ensure RMS values correct
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN500_SAMPLE_RATE_MS 1
 #define ADC_SIN100_SAMPLE_SIZE 200
 #define ADC_SIN500_SAMPLE_SIZE 1000
-
+#define VPP_CONV_RMS (2 * M_SQRT2)
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -43,14 +43,14 @@ static const struct gpio_dt_spec board_led2 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), g
 static const struct gpio_dt_spec board_led3 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
 
 /* Static Variables*/
-static int adc_sin100_mV;
-static int adc_sin500_mV;
-static float adc_sin100_RMS;
-static float adc_sin500_RMS;
+static int adc_sin100_mV = 0;
+static int adc_sin500_mV = 0;
+static float adc_sin100_RMS = 0.0;
+static float adc_sin500_RMS = 0.0;
 
 /*Array Variables*/
-float sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0.0}; 
-float sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0.0}; 
+int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0}; 
+int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0}; 
 
 /*Declarations*/
 int setup_channels_and_pins(void);
@@ -65,29 +65,24 @@ K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
 
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
-	LOG_DBG("READ ADC");
-	/*
+	//LOG_DBG("Reading Sinusoid 100 Hz");
 	for (int i=0; i < ADC_SIN100_SAMPLE_SIZE - 1; i++){
 		sin100_values_mV[i] = sin100_values_mV[i+1];
 	}
-		adc_sin100_mV = read_adc(adc_sin100);
-	LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 	sin100_values_mV[ADC_SIN100_SAMPLE_SIZE -1] = adc_sin100_mV;
-	*/
 }
 void read_adc_sin500(struct k_timer *adc_sin500_timer){
+	//LOG_DBG("Reading Sinusoid 500 Hz");
 	for (int i=0; i < ADC_SIN500_SAMPLE_SIZE - 1; i++){
 		sin500_values_mV[i] = sin500_values_mV[i+1];
 	}
-	adc_sin500_mV = read_adc(adc_sin500);
-	LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 	sin500_values_mV[ADC_SIN500_SAMPLE_SIZE -1] = adc_sin500_mV;
 }
 
-float calculate_rms(float sin_arr[], int sample_size){
+float calculate_rms(int sin_arr[], int sample_size){
 	float array_sum = 0.0;
 	for (int i = 0; i < sample_size; i++){
-		array_sum += sin_arr[i] * sin_arr[i];
+		array_sum += (float)sin_arr[i] * (float)sin_arr[i];
 	}
 	return sqrtf(array_sum / (float)sample_size);
 }
@@ -106,17 +101,17 @@ void main(void)
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
 k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
-	//k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
+k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
 	while (1) {
-		k_msleep(1); // Allow for Logging
-		/*
+		k_msleep(1); // Allow for Logging (Change this line to ensure ADC values correct)
 		adc_sin100_mV = read_adc(adc_sin100);
-		LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
+		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		adc_sin500_mV = read_adc(adc_sin500);
-		LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
-		*/
+		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
+		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
+		LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
