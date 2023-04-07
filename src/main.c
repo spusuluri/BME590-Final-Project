@@ -1,7 +1,6 @@
 /*
 *To-Do List: 
-1. Ensure ADC values correct
-2. Ensure RMS values correct
+1. Ensure RMS values correct
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
