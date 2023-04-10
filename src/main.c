@@ -2,6 +2,7 @@
 *To-Do List: 
 1. Ensure RMS values correct with changed code
 2. BLE_DATA_POINTS IS ALREADY DEFINED
+3. Play around to SAMPLE SIZE to see which provides better VPP values
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
