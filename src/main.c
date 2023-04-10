@@ -93,6 +93,10 @@ float calculate_rms(int sin_arr[], int sample_size){
 	return sqrtf(array_sum / (float)sample_size);
 }
 
+int calculate_VPP(float rms_value){
+	return (int)(rms_value * VPP_CONV_RMS);
+}
+
 void main(void)
 {
 	int err;
@@ -117,9 +121,9 @@ k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC
 		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
-		adc_sin100_VPP = adc_sin100_RMS * VPP_CONV_RMS;
+		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
-		adc_sin500_VPP = adc_sin500_RMS * VPP_CONV_RMS;
+		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 	}
 }
