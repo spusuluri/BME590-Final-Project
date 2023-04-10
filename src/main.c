@@ -1,6 +1,7 @@
 /*
 *To-Do List: 
-1. Ensure RMS values correct
+1. Ensure RMS values correct with changed code
+2. BLE_DATA_POINTS IS ALREADY DEFINED
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -12,11 +13,12 @@
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
-#define ADC_SIN100_SAMPLE_RATE_MS 5
-#define ADC_SIN500_SAMPLE_RATE_MS 1
+#define ADC_SIN100_SAMPLE_RATE_MSEC 1
+#define ADC_SIN500_SAMPLE_RATE_USEC 100
 #define ADC_SIN100_SAMPLE_SIZE 200
 #define ADC_SIN500_SAMPLE_SIZE 1000
 #define VPP_CONV_RMS M_SQRT2
+#define BLE_DATA_POINTS 5
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -46,12 +48,14 @@ static int adc_sin100_mV = 0;
 static int adc_sin500_mV = 0;
 static float adc_sin100_RMS = 0.0;
 static float adc_sin500_RMS = 0.0;
-static float adc_sin100_VPP;
-static float adc_sin500_VPP;
+static int adc_sin100_VPP = 0;
+static int adc_sin500_VPP = 0;
 
 /*Array Variables*/
 int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0}; 
-int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0}; 
+int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0};
+float sin100_RMS_values[BLE_DATA_POINTS]={0.0};
+float sin500_RMS_values[BLE_DATA_POINTS]={0.0};
 
 /*Declarations*/
 int setup_channels_and_pins(void);
@@ -101,22 +105,21 @@ void main(void)
 	}
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
-k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MS), K_MSEC(ADC_SIN100_SAMPLE_RATE_MS));
-k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MS), K_MSEC(ADC_SIN500_SAMPLE_RATE_MS));
+k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
+k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
 	while (1) {
-		// Allow for Logging (Change this line to ensure ADC values correct)
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		adc_sin500_mV = read_adc(adc_sin500);
-		LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
+		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = adc_sin100_RMS * VPP_CONV_RMS;
-		//LOG_DBG("100 Hz Sinusoid VPP Value: %f", adc_sin100_VPP);
+		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		adc_sin500_VPP = adc_sin500_RMS * VPP_CONV_RMS;
-		//LOG_DBG("500 Hz Sinusoid VPP Value: %f", adc_sin500_VPP);
+		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
