@@ -16,10 +16,15 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
 #define ADC_SIN100_SAMPLE_RATE_MSEC 1
 #define ADC_SIN500_SAMPLE_RATE_USEC 100
-#define ADC_SIN100_SAMPLE_SIZE 200
+#define ADC_SIN100_SAMPLE_SIZE 1000
 #define ADC_SIN500_SAMPLE_SIZE 1000
-#define VPP_CONV_RMS M_SQRT2
+#define VPP_CONV_RMS (2 * M_SQRT2)
 #define BLE_DATA_POINTS 5
+#define LED_MAX_BRIGHTNESS 1
+#define ADC_SIN100_MIN_VPP 5
+#define ADC_SIN100_MAX_VPP 50
+#define ADC_SIN500_MIN_VPP 10
+#define ADC_SIN500_MAX_VPP 150 
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -51,6 +56,9 @@ static float adc_sin100_RMS = 0.0;
 static float adc_sin500_RMS = 0.0;
 static int adc_sin100_VPP = 0;
 static int adc_sin500_VPP = 0;
+static float adc_sin100_percent_voltage;
+static float adc_sin500_percent_voltage;
+
 
 /*Array Variables*/
 int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0}; 
@@ -64,11 +72,11 @@ int check_interfaces_ready(void);
 int read_adc(struct adc_dt_spec adc_channel);
 void read_adc_sin100(struct k_timer *adc_sin100_timer);
 void read_adc_sin500(struct k_timer *adc_sin500_timer);
-
+float adc_sin100_calculate_led_brightness(int val_VPP);
+float adc_sin500_calculate_led_brightness(int val_VPP);
 /* Define Timers*/
 K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
 K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
-
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
 	//LOG_DBG("Reading Sinusoid 100 Hz");
@@ -111,7 +119,7 @@ void main(void)
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
 k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
-k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
+//k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
 	while (1) {
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
@@ -122,9 +130,29 @@ k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
-		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
+		LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
+		adc_sin100_percent_voltage = adc_sin100_calculate_led_brightness(adc_sin100_VPP);
+		if (adc_sin100_percent_voltage < 0){
+			adc_sin100_percent_voltage = 0.0;
+		}
+		adc_sin500_percent_voltage = adc_sin500_calculate_led_brightness(adc_sin500_VPP);
+		if (adc_sin500_percent_voltage < 0){
+			adc_sin500_percent_voltage = 0.0;
+		}
+		uint32_t board_led1_pulse = board_led1_drv.period * adc_sin100_percent_voltage;
+		uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
+		err = pwm_set_pulse_dt(&board_led1_drv, board_led1_pulse);
+		if (err) {
+			LOG_ERR("HERE Could not set Board LED 1 (PWM0)");
+		}
+		//err = pwm_set_pulse_dt(&board_led2_drv, board_led2_pulse);
+		/*
+		if (err) {
+			LOG_ERR("Could not set Board LED 2 (PWM0)");
+		}
+		*/
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
@@ -207,4 +235,24 @@ int setup_channels_and_pins(void){
 	}
 	/* Need to Configure Buttons*/
 	return 0;
+}
+float adc_sin100_calculate_led_brightness(int val_VPP){
+	/*
+	This function will output the percentage of brightness for the
+	LED for the 100 Hz Sinusoid.
+
+	Inputs: 
+		int val_VPP: Input VPP
+	*/
+	return (float)(1.0/45.0) * (float)val_VPP - 1.0/9.0; 
+}
+float adc_sin500_calculate_led_brightness(int val_VPP){
+	/*
+	This function will output the percentage of brightness for the
+	LED for the 500 Hz Sinusoid.
+
+	Inputs: 
+		int val_VPP: Input VPP
+	*/
+	return (float)(1.0/140.0) * (float)val_VPP - 1.0/14.0; 
 }
