@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN500_SAMPLE_RATE_USEC 100
 #define ADC_SIN100_SAMPLE_SIZE 1000
 #define ADC_SIN500_SAMPLE_SIZE 1000
-#define VPP_CONV_RMS (2 * M_SQRT2)
+#define VPP_CONV_RMS M_SQRT2
 #define BLE_DATA_POINTS 5
 #define LED_MAX_BRIGHTNESS 1
 #define ADC_SIN100_MIN_VPP 5
@@ -118,8 +118,8 @@ void main(void)
 	}
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
-k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
-//k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
+	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
+	//k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
 	while (1) {
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
@@ -142,7 +142,7 @@ k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC
 			adc_sin500_percent_voltage = 0.0;
 		}
 		uint32_t board_led1_pulse = board_led1_drv.period * adc_sin100_percent_voltage;
-		uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
+		//uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
 		err = pwm_set_pulse_dt(&board_led1_drv, board_led1_pulse);
 		if (err) {
 			LOG_ERR("HERE Could not set Board LED 1 (PWM0)");

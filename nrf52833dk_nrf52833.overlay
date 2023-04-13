@@ -24,12 +24,12 @@
 		compatible = "pwm-leds";
 		in1: in_1 {
 			pwms= <&pwm0 0 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
-			label = "ALARM PWM";
+			label = "Board LED 1 PWM";
 		};
 
 		in2: in_2 {
 			pwms= <&pwm0 1 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
-			label = "IVDRIP PWM";
+			label = "Board LED 2 PWM";
 		};
 	};
 };
