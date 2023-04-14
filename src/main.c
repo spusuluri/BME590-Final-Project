@@ -137,9 +137,15 @@ void main(void)
 		if (adc_sin100_percent_voltage < 0){
 			adc_sin100_percent_voltage = 0.0;
 		}
+		if (adc_sin100_percent_voltage > 1){
+			adc_sin100_percent_voltage = 1.0;
+		}
 		adc_sin500_percent_voltage = adc_sin500_calculate_led_brightness(adc_sin500_VPP);
 		if (adc_sin500_percent_voltage < 0){
 			adc_sin500_percent_voltage = 0.0;
+		}
+		if (adc_sin500_percent_voltage > 1){
+			adc_sin500_percent_voltage = 1.0;
 		}
 		uint32_t board_led1_pulse = board_led1_drv.period * adc_sin100_percent_voltage;
 		//uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
