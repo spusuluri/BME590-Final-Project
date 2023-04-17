@@ -148,17 +148,15 @@ void main(void)
 			adc_sin500_percent_voltage = 1.0;
 		}
 		uint32_t board_led1_pulse = board_led1_drv.period * adc_sin100_percent_voltage;
-		//uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
+		uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
 		err = pwm_set_pulse_dt(&board_led1_drv, board_led1_pulse);
 		if (err) {
 			LOG_ERR("HERE Could not set Board LED 1 (PWM0)");
 		}
-		//err = pwm_set_pulse_dt(&board_led2_drv, board_led2_pulse);
-		/*
+		err = pwm_set_pulse_dt(&board_led2_drv, board_led2_pulse);
 		if (err) {
 			LOG_ERR("Could not set Board LED 2 (PWM0)");
 		}
-		*/
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
