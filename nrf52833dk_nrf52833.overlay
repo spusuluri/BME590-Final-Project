@@ -19,6 +19,8 @@
 		drv2 = &in2;
         sin100 = &reslow;
         sin500 = &reshigh;
+		button0=&button0;
+		button1=&button1;
     };
 	pwm_mtr{
 		compatible = "pwm-leds";

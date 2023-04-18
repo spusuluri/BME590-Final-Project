@@ -1,8 +1,7 @@
 /*
 *To-Do List: 
-1. Ensure RMS values correct with changed code
-2. BLE_DATA_POINTS IS ALREADY DEFINED
-3. Play around to SAMPLE SIZE to see which provides better VPP values
+Note: BLE_DATA_POINTS IS ALREADY DEFINED
+
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -15,7 +14,7 @@
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
 #define ADC_SIN100_SAMPLE_RATE_MSEC 1
-#define ADC_SIN500_SAMPLE_RATE_USEC 100
+#define ADC_SIN500_SAMPLE_RATE_MSEC 1
 #define ADC_SIN100_SAMPLE_SIZE 1000
 #define ADC_SIN500_SAMPLE_SIZE 1000
 #define VPP_CONV_RMS M_SQRT2
@@ -49,6 +48,10 @@ static const struct gpio_dt_spec board_led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), g
 static const struct gpio_dt_spec board_led2 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 static const struct gpio_dt_spec board_led3 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
 
+/*Buttons*/
+static const struct gpio_dt_spec board_button1 = GPIO_DT_SPEC_GET(DT_ALIAS(button0), gpios);
+static const struct gpio_dt_spec board_button2 = GPIO_DT_SPEC_GET(DT_ALIAS(button1), gpios);
+
 /* Static Variables*/
 static int adc_sin100_mV = 0;
 static int adc_sin500_mV = 0;
@@ -58,6 +61,10 @@ static int adc_sin100_VPP = 0;
 static int adc_sin500_VPP = 0;
 static float adc_sin100_percent_voltage;
 static float adc_sin500_percent_voltage;
+
+/*Callback Declarations*/
+static struct gpio_callback board_button1_cb;
+static struct gpio_callback board_button2_cb;
 
 
 /*Array Variables*/
@@ -69,6 +76,8 @@ float sin500_RMS_values[BLE_DATA_POINTS]={0.0};
 /*Declarations*/
 int setup_channels_and_pins(void);
 int check_interfaces_ready(void);
+void board_button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
+void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 int read_adc(struct adc_dt_spec adc_channel);
 void read_adc_sin100(struct k_timer *adc_sin100_timer);
 void read_adc_sin500(struct k_timer *adc_sin500_timer);
@@ -79,7 +88,6 @@ K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
 K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
-	//LOG_DBG("Reading Sinusoid 100 Hz");
 	for (int i=0; i < ADC_SIN100_SAMPLE_SIZE - 1; i++){
 		sin100_values_mV[i] = sin100_values_mV[i+1];
 	}
@@ -91,6 +99,15 @@ void read_adc_sin500(struct k_timer *adc_sin500_timer){
 		sin500_values_mV[i] = sin500_values_mV[i+1];
 	}
 	sin500_values_mV[ADC_SIN500_SAMPLE_SIZE -1] = adc_sin500_mV;
+}
+/*Callbacks*/
+void board_button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	LOG_DBG("Button 1 pressed.");
+}
+void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	LOG_DBG("Button 2 pressed.");
 }
 
 float calculate_rms(int sin_arr[], int sample_size){
@@ -116,10 +133,26 @@ void main(void)
 	if (err){
 		LOG_ERR("Error configuring IO pins (err = %d", err);
 	}
+	/* Setup Callbacks*/
+	err = gpio_pin_interrupt_configure_dt(&board_button1, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err < 0){
+		LOG_ERR("Error configuring button 1 callback");
+		return;
+	}	
+	gpio_init_callback(&board_button1_cb, board_button1_callback, BIT(board_button1.pin));
+	gpio_add_callback(board_button1.port, &board_button1_cb);
+
+	err = gpio_pin_interrupt_configure_dt(&board_button2, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err < 0){
+		LOG_ERR("Error configuring button 2 callback");
+		return;
+	}	
+	gpio_init_callback(&board_button2_cb, board_button2_callback, BIT(board_button2.pin));
+	gpio_add_callback(board_button2.port, &board_button2_cb);
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
-	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
-	//k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
+	//k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
+	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
@@ -131,7 +164,7 @@ void main(void)
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
-		LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
+		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 		adc_sin100_percent_voltage = adc_sin100_calculate_led_brightness(adc_sin100_VPP);
 		if (adc_sin100_percent_voltage < 0){
@@ -235,6 +268,16 @@ int setup_channels_and_pins(void){
 	ret = gpio_pin_configure_dt(&board_led3, GPIO_OUTPUT_INACTIVE | GPIO_ACTIVE_LOW);
 	if (ret < 0){
 		LOG_ERR("Cannot configure board led 3.");
+		return ret;
+	}
+	ret = gpio_pin_configure_dt(&board_button1, GPIO_INPUT);
+	if (ret < 0){
+		LOG_ERR("Cannot configure board 1 button.");
+		return ret;
+	}
+	ret = gpio_pin_configure_dt(&board_button2, GPIO_INPUT);
+	if (ret < 0){
+		LOG_ERR("Cannot configure board 2 button.");
 		return ret;
 	}
 	/* Need to Configure Buttons*/
