@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
 #define ADC_SIN100_SAMPLE_RATE_MSEC 1
 #define ADC_SIN500_SAMPLE_RATE_MSEC 1
+#define RMS_DATA_SAMPLE_RATE_MSEC 1000
 #define ADC_SIN100_SAMPLE_SIZE 1000
 #define ADC_SIN500_SAMPLE_SIZE 1000
 #define VPP_CONV_RMS M_SQRT2
@@ -61,6 +62,7 @@ static int adc_sin100_VPP = 0;
 static int adc_sin500_VPP = 0;
 static float adc_sin100_percent_voltage;
 static float adc_sin500_percent_voltage;
+static int rms_data_count = 0;
 
 /*Callback Declarations*/
 static struct gpio_callback board_button1_cb;
@@ -81,11 +83,14 @@ void board_button2_callback(const struct device *dev, struct gpio_callback *cb, 
 int read_adc(struct adc_dt_spec adc_channel);
 void read_adc_sin100(struct k_timer *adc_sin100_timer);
 void read_adc_sin500(struct k_timer *adc_sin500_timer);
+void collect_rms_data(struct k_timer *rms_collection_timer);
+void stop_rms_data(struct k_timer *rms_collection_timer);
 float adc_sin100_calculate_led_brightness(int val_VPP);
 float adc_sin500_calculate_led_brightness(int val_VPP);
 /* Define Timers*/
 K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
 K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
+K_TIMER_DEFINE(rms_collection_timer, collect_rms_data, stop_rms_data);
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
 	for (int i=0; i < ADC_SIN100_SAMPLE_SIZE - 1; i++){
@@ -100,10 +105,26 @@ void read_adc_sin500(struct k_timer *adc_sin500_timer){
 	}
 	sin500_values_mV[ADC_SIN500_SAMPLE_SIZE -1] = adc_sin500_mV;
 }
+void collect_rms_data(struct k_timer *rms_collection_timer){
+	LOG_DBG("RMS Data Collected");
+	sin100_RMS_values[rms_data_count]=adc_sin100_RMS;
+	sin500_RMS_values[rms_data_count]=adc_sin500_RMS;
+	if(rms_data_count == 4){
+		rms_data_count = 0;
+		k_timer_stop(rms_collection_timer);
+	}
+	else{
+		rms_data_count++;
+	}
+}
+void stop_rms_data(struct k_timer *rms_collection_timer){
+	LOG_DBG("RMS Data Stopped");
+}
 /*Callbacks*/
 void board_button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	LOG_DBG("Button 1 pressed.");
+	k_timer_start(&rms_collection_timer, K_MSEC(RMS_DATA_SAMPLE_RATE_MSEC), K_MSEC(RMS_DATA_SAMPLE_RATE_MSEC));
 }
 void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
