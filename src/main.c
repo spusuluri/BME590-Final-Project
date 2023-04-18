@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 /* ADC channels (specified in DT overlay) */
 static const struct adc_dt_spec adc_sin100 = ADC_DT_SPEC_GET_BY_ALIAS(sin100);
 static const struct adc_dt_spec adc_sin500 = ADC_DT_SPEC_GET_BY_ALIAS(sin500);
+static const struct adc_dt_spec adc_vbat = ADC_DT_SPEC_GET_BY_ALIAS(vbat);
 
 /* PWM Channels*/
 static const struct pwm_dt_spec board_led1_drv = PWM_DT_SPEC_GET(DT_ALIAS(drv1)); 
@@ -56,6 +57,7 @@ static const struct gpio_dt_spec board_button2 = GPIO_DT_SPEC_GET(DT_ALIAS(butto
 /* Static Variables*/
 static int adc_sin100_mV = 0;
 static int adc_sin500_mV = 0;
+static int adc_vbat_mV = 0;
 static float adc_sin100_RMS = 0.0;
 static float adc_sin500_RMS = 0.0;
 static int adc_sin100_VPP = 0;
@@ -173,12 +175,15 @@ void main(void)
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
 	//k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
-	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
+	//k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		adc_sin500_mV = read_adc(adc_sin500);
 		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
+		/* DELETE THIS LINE AFTER USING*/
+		adc_vbat_mV = read_adc(adc_vbat);
+		LOG_DBG("Battery Voltage ADC Value (mV): %d", adc_vbat_mV);
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
