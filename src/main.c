@@ -212,7 +212,11 @@ void main(void)
 			LOG_DBG("VBUS is still connected.");
 			break;
 		}
-		k_timer_stop(&vbus_timer);
+		if (!err && vbus_state){
+			LOG_DBG("VBUS was disconnected.");
+			vbus_state=0;
+			k_timer_stop(&vbus_timer);
+		}
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		adc_sin500_mV = read_adc(adc_sin500);
