@@ -1,7 +1,16 @@
 /*
 *To-Do List: 
 Note: BLE_DATA_POINTS IS ALREADY DEFINED
-
+1. Ask questions about PWM Duty Cycle on O-Scope
+2. Check about brightness (~invert?)
+3. Can LED1 & LED2 be on when VBUS is detected? Why are there two semicolons?
+4. Where is VBUS on thing? (TEST VBUS)
+5. I can't read voltages beyond 3 V for Battery Vol? 
+Tried changing different parameters Suggestions?
+6. Ok to have functions with equation pre-calculated for brightness levels
+7. What is the notification? Is that the actually sending of the bluetooth data?
+8. How to demonstarte things work? Video? 
+9. Experimentally, test that theoretical value?
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -15,6 +24,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
 #define ADC_SIN100_SAMPLE_RATE_MSEC 1
 #define ADC_SIN500_SAMPLE_RATE_MSEC 1
+#define LED3_ON_TIME_MS 1000
 #define RMS_DATA_SAMPLE_RATE_MSEC 1000
 #define ADC_SIN100_SAMPLE_SIZE 1000
 #define ADC_SIN500_SAMPLE_SIZE 1000
@@ -65,6 +75,8 @@ static int adc_sin500_VPP = 0;
 static float adc_sin100_percent_voltage;
 static float adc_sin500_percent_voltage;
 static int rms_data_count = 0;
+static bool usbregstatus;
+static bool vbus_state = 0;
 
 /*Callback Declarations*/
 static struct gpio_callback board_button1_cb;
@@ -80,6 +92,7 @@ float sin500_RMS_values[BLE_DATA_POINTS]={0.0};
 /*Declarations*/
 int setup_channels_and_pins(void);
 int check_interfaces_ready(void);
+int check_vbus(void);
 void board_button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 int read_adc(struct adc_dt_spec adc_channel);
@@ -87,12 +100,15 @@ void read_adc_sin100(struct k_timer *adc_sin100_timer);
 void read_adc_sin500(struct k_timer *adc_sin500_timer);
 void collect_rms_data(struct k_timer *rms_collection_timer);
 void stop_rms_data(struct k_timer *rms_collection_timer);
+void boardled3_toggle(struct k_timer *vbus_timer);
+void boardled3_stop(struct k_timer *vbus_timer);
 float adc_sin100_calculate_led_brightness(int val_VPP);
 float adc_sin500_calculate_led_brightness(int val_VPP);
 /* Define Timers*/
 K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
 K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
 K_TIMER_DEFINE(rms_collection_timer, collect_rms_data, stop_rms_data);
+K_TIMER_DEFINE(vbus_timer, boardled3_toggle, boardled3_stop);
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
 	for (int i=0; i < ADC_SIN100_SAMPLE_SIZE - 1; i++){
@@ -121,6 +137,14 @@ void collect_rms_data(struct k_timer *rms_collection_timer){
 }
 void stop_rms_data(struct k_timer *rms_collection_timer){
 	LOG_DBG("RMS Data Stopped");
+}
+void boardled3_toggle(struct k_timer *vbus_timer){
+	gpio_pin_toggle_dt(&board_led3);
+	LOG_DBG("LED 3 Toggle");
+}
+void boardled3_stop(struct k_timer *vbus_timer){
+	LOG_DBG("LED 3 turned off.");
+	gpio_pin_set_dt(&board_led3, 0);
 }
 /*Callbacks*/
 void board_button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -177,13 +201,26 @@ void main(void)
 	//k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
 	//k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
+		err = check_vbus();
+		if (err && !vbus_state){
+			LOG_DBG("VBUS is connected.");
+			vbus_state=1;
+			k_timer_start(&vbus_timer, K_MSEC(LED3_ON_TIME_MS), K_MSEC(LED3_ON_TIME_MS));
+			break;
+		}
+		if (err && vbus_state){
+			LOG_DBG("VBUS is still connected.");
+			break;
+		}
+		k_timer_stop(&vbus_timer);
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		adc_sin500_mV = read_adc(adc_sin500);
 		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
-		/* DELETE THIS LINE AFTER USING*/
+		/* DELETE THIS LINE AFTER TESTING VBAT
 		adc_vbat_mV = read_adc(adc_vbat);
 		LOG_DBG("Battery Voltage ADC Value (mV): %d", adc_vbat_mV);
+		*/
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
@@ -257,7 +294,7 @@ int check_interfaces_ready(void){
 		return -1;
 	}
 	/* This should check ADC channels*/
-	if (!device_is_ready(adc_sin100.dev) || !device_is_ready(adc_sin500.dev)) {
+	if (!device_is_ready(adc_sin100.dev) || !device_is_ready(adc_sin500.dev) || !device_is_ready(adc_vbat.dev)) {
 		LOG_ERR("ADC controller device(s) not ready");
 		return -1;
 	}
@@ -278,6 +315,11 @@ int setup_channels_and_pins(void){
 	ret = adc_channel_setup_dt(&adc_sin500);
 	if (ret < 0) {
 		LOG_ERR("Could not setup Sin 500 ADC channel (%d)", ret);
+		return ret;
+	}
+	ret = adc_channel_setup_dt(&adc_vbat);
+	if (ret < 0) {
+		LOG_ERR("Could not setup Voltage Battery ADC channel (%d)", ret);
 		return ret;
 	}
 	/* Configure GPIO pins*/
@@ -306,7 +348,6 @@ int setup_channels_and_pins(void){
 		LOG_ERR("Cannot configure board 2 button.");
 		return ret;
 	}
-	/* Need to Configure Buttons*/
 	return 0;
 }
 float adc_sin100_calculate_led_brightness(int val_VPP){
@@ -328,4 +369,24 @@ float adc_sin500_calculate_led_brightness(int val_VPP){
 		int val_VPP: Input VPP
 	*/
 	return (float)(1.0/140.0) * (float)val_VPP - 1.0/14.0; 
+}
+
+int check_vbus() {
+    /* check for voltage on VBUS (USB-C charging cable attached)
+    
+    Returns:
+        0 - VBUS not detected
+        -1 - VBUS detected (need to kill device function)
+    */
+
+    usbregstatus = nrf_power_usbregstatus_vbusdet_get(NRF_POWER);;
+    if (usbregstatus) {
+        LOG_ERR("VBUS voltage detected.  Device cannot be operated while charging.");
+        return -1;
+    }
+    else {
+        //LOG_DBG("VBUS voltage checked and not detected.");
+    }
+
+    return 0;
 }
