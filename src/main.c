@@ -20,6 +20,12 @@ Tried changing different parameters Suggestions?
 #include <zephyr/drivers/pwm.h>
 #include <nrfx_power.h>
 #include <math.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/bluetooth/services/bas.h>
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
@@ -46,6 +52,37 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
 #define DT_SPEC_AND_COMMA(node_id, prop, idx) \
 	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+
+/*Bluetooth UUID and defines*/
+
+/* UUID of the Remote Service */
+// Blur Project ID: 062 (3rd entry)
+// Blur BLE MFG ID = 0x03DF (4th entry)
+#define BT_UUID_REMOTE_SERV_VAL \
+	    BT_UUID_128_ENCODE(0xe8ea0000, 0xe19b, 0x0062, 0x03DF, 0xc7007585fc48)
+
+/* UUID of the Data Characteristic */
+#define BT_UUID_REMOTE_DATA_CHRC_VAL \
+	    BT_UUID_128_ENCODE(0xe8ea0001, 0xe19b, 0x0062, 0x03DF, 0xc7007585fc48)
+
+/* UUID of the Message Characteristic */
+#define BT_UUID_REMOTE_MESSAGE_CHRC_VAL \
+	    BT_UUID_128_ENCODE(0xe8ea0002, 0xe19b, 0x0062, 0x03DF, 0xc7007585fc48)
+
+#define BT_UUID_REMOTE_SERVICE 			BT_UUID_DECLARE_128(BT_UUID_REMOTE_SERV_VAL)
+#define BT_UUID_REMOTE_DATA_CHRC 		BT_UUID_DECLARE_128(BT_UUID_REMOTE_DATA_CHRC_VAL)
+#define BT_UUID_REMOTE_MESSAGE_CHRC 	BT_UUID_DECLARE_128(BT_UUID_REMOTE_MESSAGE_CHRC_VAL)
+
+enum bt_data_notifications_enabled {
+	BT_DATA_NOTIFICATIONS_ENABLED,
+	BT_DATA_NOTIFICATIONS_DISABLED,
+};
+
+struct bt_remote_srv_cb {
+	void (*notif_changed)(enum bt_data_notifications_enabled status);
+	void (*data_rx)(struct bt_conn *conn, const uint8_t *const data, uint16_t len);
+};
+
 
 /* ADC channels (specified in DT overlay) */
 static const struct adc_dt_spec adc_sin100 = ADC_DT_SPEC_GET_BY_ALIAS(sin100);
