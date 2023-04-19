@@ -1,7 +1,8 @@
 /*
 *To-Do List: 
 Note: BLE_DATA_POINTS IS ALREADY DEFINED
-1. Ask questions about PWM Duty Cycle on O-Scope
+Test VBUS code
+QUESTIONS: 
 2. Check about brightness (~invert?)
 3. Can LED1 & LED2 be on when VBUS is detected? Why are there two semicolons?
 4. Where is VBUS on thing? (TEST VBUS)
