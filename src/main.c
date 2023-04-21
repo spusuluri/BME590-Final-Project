@@ -8,10 +8,11 @@ QUESTIONS:
 4. Where is VBUS on thing? (TEST VBUS)
 5. I can't read voltages beyond 3 V for Battery Vol? 
 Tried changing different parameters Suggestions?
-6. Ok to have functions with equation pre-calculated for brightness levels
 7. What is the notification? Is that the actually sending of the bluetooth data?
 8. How to demonstarte things work? Video? 
 9. Experimentally, test that theoretical value?
+MAIN PROBLEM: Other code will mess up the timing of the reading of the adc ; need to check
+the at what sampling to check the waveforms. 
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -52,37 +53,6 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
 #define DT_SPEC_AND_COMMA(node_id, prop, idx) \
 	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
-
-/*Bluetooth UUID and defines*/
-
-/* UUID of the Remote Service */
-// Blur Project ID: 062 (3rd entry)
-// Blur BLE MFG ID = 0x03DF (4th entry)
-#define BT_UUID_REMOTE_SERV_VAL \
-	    BT_UUID_128_ENCODE(0xe8ea0000, 0xe19b, 0x0062, 0x03DF, 0xc7007585fc48)
-
-/* UUID of the Data Characteristic */
-#define BT_UUID_REMOTE_DATA_CHRC_VAL \
-	    BT_UUID_128_ENCODE(0xe8ea0001, 0xe19b, 0x0062, 0x03DF, 0xc7007585fc48)
-
-/* UUID of the Message Characteristic */
-#define BT_UUID_REMOTE_MESSAGE_CHRC_VAL \
-	    BT_UUID_128_ENCODE(0xe8ea0002, 0xe19b, 0x0062, 0x03DF, 0xc7007585fc48)
-
-#define BT_UUID_REMOTE_SERVICE 			BT_UUID_DECLARE_128(BT_UUID_REMOTE_SERV_VAL)
-#define BT_UUID_REMOTE_DATA_CHRC 		BT_UUID_DECLARE_128(BT_UUID_REMOTE_DATA_CHRC_VAL)
-#define BT_UUID_REMOTE_MESSAGE_CHRC 	BT_UUID_DECLARE_128(BT_UUID_REMOTE_MESSAGE_CHRC_VAL)
-
-enum bt_data_notifications_enabled {
-	BT_DATA_NOTIFICATIONS_ENABLED,
-	BT_DATA_NOTIFICATIONS_DISABLED,
-};
-
-struct bt_remote_srv_cb {
-	void (*notif_changed)(enum bt_data_notifications_enabled status);
-	void (*data_rx)(struct bt_conn *conn, const uint8_t *const data, uint16_t len);
-};
-
 
 /* ADC channels (specified in DT overlay) */
 static const struct adc_dt_spec adc_sin100 = ADC_DT_SPEC_GET_BY_ALIAS(sin100);
@@ -142,6 +112,7 @@ void boardled3_toggle(struct k_timer *vbus_timer);
 void boardled3_stop(struct k_timer *vbus_timer);
 float adc_sin100_calculate_led_brightness(int val_VPP);
 float adc_sin500_calculate_led_brightness(int val_VPP);
+float calculate_led_brightness(int val_VPP, int min_VPP, int max_VPP);
 /* Define Timers*/
 K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
 K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
@@ -236,8 +207,8 @@ void main(void)
 	gpio_add_callback(board_button2.port, &board_button2_cb);
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
-	//k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
-	//k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
+	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
+	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
 		err = check_vbus();
 		if (err && !vbus_state){
@@ -269,7 +240,7 @@ void main(void)
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
-		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
+		LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 		adc_sin100_percent_voltage = adc_sin100_calculate_led_brightness(adc_sin100_VPP);
 		if (adc_sin100_percent_voltage < 0){
@@ -411,6 +382,12 @@ float adc_sin500_calculate_led_brightness(int val_VPP){
 		int val_VPP: Input VPP
 	*/
 	return (float)(1.0/140.0) * (float)val_VPP - 1.0/14.0; 
+}
+
+float calculate_led_brightness(int val_VPP, int min_VPP, int max_VPP){
+	float slope = ((float)LED_MAX_BRIGHTNESS) / ((float)max_VPP - (float)min_VPP);
+	float intercept = ((float)min_VPP) / ((float)max_VPP - (float)min_VPP);
+	return (float) (slope) * (float)(val_VPP) - (float)(intercept);
 }
 
 int check_vbus() {
