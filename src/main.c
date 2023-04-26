@@ -211,12 +211,14 @@ void main(void)
 	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
 		err = check_vbus();
-		if (err && !vbus_state){
+		if (err){
 			LOG_DBG("VBUS is connected.");
 			vbus_state=1;
 			k_timer_start(&vbus_timer, K_MSEC(LED3_ON_TIME_MS), K_MSEC(LED3_ON_TIME_MS));
 			break;
 		}
+		k_timer_stop(&vbus_timer);
+		/*
 		if (err && vbus_state){
 			LOG_DBG("VBUS is still connected.");
 			break;
@@ -226,6 +228,7 @@ void main(void)
 			vbus_state=0;
 			k_timer_stop(&vbus_timer);
 		}
+		*/
 		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		adc_sin500_mV = read_adc(adc_sin500);
@@ -249,6 +252,7 @@ void main(void)
 		if (adc_sin100_percent_voltage > 1){
 			adc_sin100_percent_voltage = 1.0;
 		}
+		//LOG_DBG("ADC Sin 100 Percent Voltage: %f", adc_sin100_percent_voltage);
 		adc_sin500_percent_voltage = adc_sin500_calculate_led_brightness(adc_sin500_VPP);
 		if (adc_sin500_percent_voltage < 0){
 			adc_sin500_percent_voltage = 0.0;
