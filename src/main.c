@@ -41,8 +41,8 @@ if (!err && vbus_state){
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
-#define ADC_SIN100_SAMPLE_RATE_MSEC 1
-#define ADC_SIN500_SAMPLE_RATE_MSEC 1
+#define ADC_SIN100_SAMPLE_RATE_MSEC 5
+#define ADC_SIN500_SAMPLE_RATE_USEC 1000
 #define LED3_ON_TIME_MS 1000
 #define RMS_DATA_SAMPLE_RATE_MSEC 1000
 #define ADC_SIN100_SAMPLE_SIZE 1000
@@ -174,6 +174,7 @@ void board_button1_callback(const struct device *dev, struct gpio_callback *cb, 
 }
 void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
+	LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 	LOG_DBG("Button 2 pressed.");
 }
 
@@ -219,8 +220,10 @@ void main(void)
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
 	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
-	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
+	k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
 	while (1) {
+		adc_sin100_mV = read_adc(adc_sin100);
+		adc_sin500_mV = read_adc(adc_sin500);
 		err = check_vbus();
 		if (err && !vbus_state){
 			vbus_state = 1;
@@ -234,9 +237,7 @@ void main(void)
 			k_timer_stop(&vbus_timer);
 			vbus_state = 0;
 		}
-		adc_sin100_mV = read_adc(adc_sin100);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
-		adc_sin500_mV = read_adc(adc_sin500);
 		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 		/* DELETE THIS LINE AFTER TESTING VBAT
 		adc_vbat_mV = read_adc(adc_vbat);
@@ -248,17 +249,18 @@ void main(void)
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
-		LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
+		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
-		adc_sin100_percent_voltage = adc_sin100_calculate_led_brightness(adc_sin100_VPP);
+		adc_sin100_percent_voltage = calculate_led_brightness(adc_sin100_VPP, ADC_SIN100_MIN_VPP, ADC_SIN100_MAX_VPP);
+		//LOG_DBG("ADC Sin100 Percent Voltage: %f", adc_sin100_percent_voltage);
 		if (adc_sin100_percent_voltage < 0){
 			adc_sin100_percent_voltage = 0.0;
 		}
 		if (adc_sin100_percent_voltage > 1){
 			adc_sin100_percent_voltage = 1.0;
 		}
-		//LOG_DBG("ADC Sin 100 Percent Voltage: %f", adc_sin100_percent_voltage);
-		adc_sin500_percent_voltage = adc_sin500_calculate_led_brightness(adc_sin500_VPP);
+		adc_sin500_percent_voltage = calculate_led_brightness(adc_sin500_VPP, ADC_SIN500_MIN_VPP, ADC_SIN500_MAX_VPP);
+		//LOG_DBG("ADC Sin 500 Percent Voltage: %f", adc_sin100_percent_voltage);
 		if (adc_sin500_percent_voltage < 0){
 			adc_sin500_percent_voltage = 0.0;
 		}
