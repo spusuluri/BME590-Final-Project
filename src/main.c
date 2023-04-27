@@ -24,7 +24,7 @@ if (!err && vbus_state){
 	vbus_state=0;
 	k_timer_stop(&vbus_timer);
 }
-		*/
+*/
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -222,54 +222,59 @@ void main(void)
 	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
 		err = check_vbus();
-		if (err){
-			LOG_DBG("VBUS is connected.");
+		if (err && !vbus_state){
+			vbus_state = 1;
 			k_timer_start(&vbus_timer, K_MSEC(LED3_ON_TIME_MS), K_MSEC(LED3_ON_TIME_MS));
+			continue;
 		}
-		else{
+		if (err && vbus_state){
+			continue;
+		}
+		if (!err && vbus_state){
 			k_timer_stop(&vbus_timer);
-			adc_sin100_mV = read_adc(adc_sin100);
-			//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
-			adc_sin500_mV = read_adc(adc_sin500);
-			//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
-			/* DELETE THIS LINE AFTER TESTING VBAT
-			adc_vbat_mV = read_adc(adc_vbat);
-			LOG_DBG("Battery Voltage ADC Value (mV): %d", adc_vbat_mV);
-			*/
-			adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
-			//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
-			adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
-			//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
-			adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
-			adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
-			LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
-			//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
-			adc_sin100_percent_voltage = adc_sin100_calculate_led_brightness(adc_sin100_VPP);
-			if (adc_sin100_percent_voltage < 0){
-				adc_sin100_percent_voltage = 0.0;
-			}
-			if (adc_sin100_percent_voltage > 1){
-				adc_sin100_percent_voltage = 1.0;
-			}
-			//LOG_DBG("ADC Sin 100 Percent Voltage: %f", adc_sin100_percent_voltage);
-			adc_sin500_percent_voltage = adc_sin500_calculate_led_brightness(adc_sin500_VPP);
-			if (adc_sin500_percent_voltage < 0){
-				adc_sin500_percent_voltage = 0.0;
-			}
-			if (adc_sin500_percent_voltage > 1){
-				adc_sin500_percent_voltage = 1.0;
-			}
-			uint32_t board_led1_pulse = board_led1_drv.period * adc_sin100_percent_voltage;
-			uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
-			err = pwm_set_pulse_dt(&board_led1_drv, board_led1_pulse);
-			if (err) {
-				LOG_ERR("HERE Could not set Board LED 1 (PWM0)");
-			}
-			err = pwm_set_pulse_dt(&board_led2_drv, board_led2_pulse);
-			if (err) {
-				LOG_ERR("Could not set Board LED 2 (PWM0)");
-			}
-		}	
+			vbus_state = 0;
+		}
+		adc_sin100_mV = read_adc(adc_sin100);
+		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
+		adc_sin500_mV = read_adc(adc_sin500);
+		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
+		/* DELETE THIS LINE AFTER TESTING VBAT
+		adc_vbat_mV = read_adc(adc_vbat);
+		LOG_DBG("Battery Voltage ADC Value (mV): %d", adc_vbat_mV);
+		*/
+		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
+		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
+		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
+		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
+		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
+		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
+		LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
+		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
+		adc_sin100_percent_voltage = adc_sin100_calculate_led_brightness(adc_sin100_VPP);
+		if (adc_sin100_percent_voltage < 0){
+			adc_sin100_percent_voltage = 0.0;
+		}
+		if (adc_sin100_percent_voltage > 1){
+			adc_sin100_percent_voltage = 1.0;
+		}
+		//LOG_DBG("ADC Sin 100 Percent Voltage: %f", adc_sin100_percent_voltage);
+		adc_sin500_percent_voltage = adc_sin500_calculate_led_brightness(adc_sin500_VPP);
+		if (adc_sin500_percent_voltage < 0){
+			adc_sin500_percent_voltage = 0.0;
+		}
+		if (adc_sin500_percent_voltage > 1){
+			adc_sin500_percent_voltage = 1.0;
+		}
+		uint32_t board_led1_pulse = board_led1_drv.period * adc_sin100_percent_voltage;
+		uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
+		err = pwm_set_pulse_dt(&board_led1_drv, board_led1_pulse);
+		if (err) {
+			LOG_ERR("HERE Could not set Board LED 1 (PWM0)");
+		}
+		err = pwm_set_pulse_dt(&board_led2_drv, board_led2_pulse);
+		if (err) {
+			LOG_ERR("Could not set Board LED 2 (PWM0)");
+		}
 	}
 }
 int read_adc(struct adc_dt_spec adc_channel)
@@ -399,17 +404,16 @@ int check_vbus() {
     
     Returns:
         0 - VBUS not detected
-        -1 - VBUS detected (need to kill device function)
+        1 - VBUS detected (need to kill device function)
     */
 
     usbregstatus = nrf_power_usbregstatus_vbusdet_get(NRF_POWER);;
     if (usbregstatus) {
-        LOG_ERR("VBUS voltage detected.  Device cannot be operated while charging.");
+        //LOG_ERR("VBUS voltage detected.  Device cannot be operated while charging.");
         return -1;
     }
     else {
         //LOG_DBG("VBUS voltage checked and not detected.");
     }
-
     return 0;
 }
