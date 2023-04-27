@@ -217,6 +217,7 @@ void main(void)
 			k_timer_start(&vbus_timer, K_MSEC(LED3_ON_TIME_MS), K_MSEC(LED3_ON_TIME_MS));
 			break;
 		}
+		// else statement everything else and do not break
 		k_timer_stop(&vbus_timer);
 		/*
 		if (err && vbus_state){
