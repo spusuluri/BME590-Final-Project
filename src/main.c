@@ -1,7 +1,7 @@
 /*
 *To-Do List: 
 Note: BLE_DATA_POINTS IS ALREADY DEFINED
-Test VBUS code
+Test VBUS code (REMOVE vbus_state if code works)
 QUESTIONS: 
 2. Check about brightness (~invert?)
 3. Can LED1 & LED2 be on when VBUS is detected? Why are there two semicolons?
@@ -14,6 +14,17 @@ Tried changing different parameters Suggestions?
 MAIN PROBLEM: Other code will mess up the timing of the reading of the adc ; need to check
 the at what sampling to check the waveforms. 
  */
+/*
+if (err && vbus_state){
+LOG_DBG("VBUS is still connected.")
+	break;
+}
+if (!err && vbus_state){
+	LOG_DBG("VBUS was disconnected.");
+	vbus_state=0;
+	k_timer_stop(&vbus_timer);
+}
+		*/
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -215,17 +226,6 @@ void main(void)
 			LOG_DBG("VBUS is connected.");
 			k_timer_start(&vbus_timer, K_MSEC(LED3_ON_TIME_MS), K_MSEC(LED3_ON_TIME_MS));
 		}
-		/*
-		if (err && vbus_state){
-			LOG_DBG("VBUS is still connected.");
-			break;
-		}
-		if (!err && vbus_state){
-			LOG_DBG("VBUS was disconnected.");
-			vbus_state=0;
-			k_timer_stop(&vbus_timer);
-		}
-		*/
 		else{
 			k_timer_stop(&vbus_timer);
 			adc_sin100_mV = read_adc(adc_sin100);
