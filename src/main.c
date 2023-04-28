@@ -42,11 +42,11 @@ if (!err && vbus_state){
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
 #define ADC_SIN100_SAMPLE_RATE_MSEC 5
-#define ADC_SIN500_SAMPLE_RATE_USEC 1000
+#define ADC_SIN500_SAMPLE_RATE_MSEC 1
 #define LED3_ON_TIME_MS 1000
 #define RMS_DATA_SAMPLE_RATE_MSEC 1000
-#define ADC_SIN100_SAMPLE_SIZE 1000
-#define ADC_SIN500_SAMPLE_SIZE 1000
+#define ADC_SIN100_SAMPLE_SIZE 200
+#define ADC_SIN500_SAMPLE_SIZE 500
 #define VPP_CONV_RMS M_SQRT2
 #define BLE_DATA_POINTS 5
 #define LED_MAX_BRIGHTNESS 1
@@ -220,7 +220,7 @@ void main(void)
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);
 	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
-	k_timer_start(&adc_sin500_timer, K_USEC(ADC_SIN500_SAMPLE_RATE_USEC), K_USEC(ADC_SIN500_SAMPLE_RATE_USEC));
+	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
 		adc_sin100_mV = read_adc(adc_sin100);
 		adc_sin500_mV = read_adc(adc_sin500);
