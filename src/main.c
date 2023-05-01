@@ -232,7 +232,7 @@ void main(void)
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
-		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
+		LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 		adc_sin100_percent_voltage = calculate_led_brightness(adc_sin100_VPP, ADC_SIN100_MIN_VPP, ADC_SIN100_MAX_VPP);
 		//LOG_DBG("ADC Sin100 Percent Voltage: %f", adc_sin100_percent_voltage);
