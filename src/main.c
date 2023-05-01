@@ -256,6 +256,18 @@ void main(void)
 		LOG_ERR("Error configuring button 2 callback");
 		return;
 	}	
+	/* Bluetooh Setup*/
+	err = bluetooth_init(&bluetooth_callbacks, &remote_service_callbacks);
+	if (err){
+		LOG_ERR("BT init failed (err = %d)", err);
+	}
+	err = send_data_notification(current_conn, sin100_RMS_values, 1);
+	if (err){
+		LOG_ERR("Could not send BT notification (err: %d)", err);
+	}
+	else{
+		LOG_INF("BT data transmitted.");
+	}
 	gpio_init_callback(&board_button2_cb, board_button2_callback, BIT(board_button2.pin));
 	gpio_add_callback(board_button2.port, &board_button2_cb);
 	gpio_pin_set_dt(&board_led1, 1);
