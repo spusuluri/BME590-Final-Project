@@ -15,12 +15,6 @@ Be sure to take out LOGs that are not used.
 #include <zephyr/drivers/pwm.h>
 #include <nrfx_power.h>
 #include <math.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/uuid.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/settings/settings.h>
-#include <zephyr/bluetooth/services/bas.h>
 #include "bt_iphone.h"
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
@@ -91,6 +85,7 @@ int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0};
 int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0};
 float sin100_RMS_values[BLE_DATA_POINTS]={0.0};
 float sin500_RMS_values[BLE_DATA_POINTS]={0.0};
+uint8_t bogus_data[BLE_DATA_POINTS]={0};
 
 /*Declarations*/
 void on_connected(struct bt_conn *conn, uint8_t ret);
@@ -261,7 +256,7 @@ void main(void)
 	if (err){
 		LOG_ERR("BT init failed (err = %d)", err);
 	}
-	err = send_data_notification(current_conn, sin100_RMS_values, 1);
+	err = send_data_notification(current_conn, bogus_data, 1);
 	if (err){
 		LOG_ERR("Could not send BT notification (err: %d)", err);
 	}
