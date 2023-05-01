@@ -4,15 +4,11 @@ Note: BLE_DATA_POINTS IS ALREADY DEFINED
 Test VBUS code (REMOVE vbus_state if code works)
 QUESTIONS: 
 2. Check about brightness (~invert?)
-3. Can LED1 & LED2 be on when VBUS is detected? Why are there two semicolons?
-4. Where is VBUS on thing? (TEST VBUS)
 5. I can't read voltages beyond 3 V for Battery Vol? 
-Tried changing different parameters Suggestions?
 7. What is the notification? Is that the actually sending of the bluetooth data?
 8. How to demonstarte things work? Video? 
 9. Experimentally, test that theoretical value?
-MAIN PROBLEM: Other code will mess up the timing of the reading of the adc ; need to check
-the at what sampling to check the waveforms. 
+Be sure to take out LOGs that are not used.
  */
 /*
 if (err && vbus_state){
@@ -41,12 +37,12 @@ if (!err && vbus_state){
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
-#define ADC_SIN100_SAMPLE_RATE_MSEC 5
+#define ADC_SIN100_SAMPLE_RATE_MSEC 1
 #define ADC_SIN500_SAMPLE_RATE_MSEC 1
 #define LED3_ON_TIME_MS 1000
 #define RMS_DATA_SAMPLE_RATE_MSEC 1000
-#define ADC_SIN100_SAMPLE_SIZE 200
-#define ADC_SIN500_SAMPLE_SIZE 500
+#define ADC_SIN100_SAMPLE_SIZE 1000
+#define ADC_SIN500_SAMPLE_SIZE 1000
 #define VPP_CONV_RMS M_SQRT2
 #define BLE_DATA_POINTS 5
 #define LED_MAX_BRIGHTNESS 1
@@ -250,7 +246,7 @@ void main(void)
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
 		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
-		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
+		LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 		adc_sin100_percent_voltage = calculate_led_brightness(adc_sin100_VPP, ADC_SIN100_MIN_VPP, ADC_SIN100_MAX_VPP);
 		//LOG_DBG("ADC Sin100 Percent Voltage: %f", adc_sin100_percent_voltage);
 		if (adc_sin100_percent_voltage < 0){
