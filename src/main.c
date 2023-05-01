@@ -1,26 +1,13 @@
 /*
 *To-Do List: 
 Note: BLE_DATA_POINTS IS ALREADY DEFINED
-Test VBUS code (REMOVE vbus_state if code works)
 QUESTIONS: 
-2. Check about brightness (~invert?)
 5. I can't read voltages beyond 3 V for Battery Vol? 
 7. What is the notification? Is that the actually sending of the bluetooth data?
 8. How to demonstarte things work? Video? 
 9. Experimentally, test that theoretical value?
 Be sure to take out LOGs that are not used.
  */
-/*
-if (err && vbus_state){
-LOG_DBG("VBUS is still connected.")
-	break;
-}
-if (!err && vbus_state){
-	LOG_DBG("VBUS was disconnected.");
-	vbus_state=0;
-	k_timer_stop(&vbus_timer);
-}
-*/
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -246,7 +233,7 @@ void main(void)
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
 		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
-		LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
+		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 		adc_sin100_percent_voltage = calculate_led_brightness(adc_sin100_VPP, ADC_SIN100_MIN_VPP, ADC_SIN100_MAX_VPP);
 		//LOG_DBG("ADC Sin100 Percent Voltage: %f", adc_sin100_percent_voltage);
 		if (adc_sin100_percent_voltage < 0){
@@ -256,7 +243,7 @@ void main(void)
 			adc_sin100_percent_voltage = 1.0;
 		}
 		adc_sin500_percent_voltage = calculate_led_brightness(adc_sin500_VPP, ADC_SIN500_MIN_VPP, ADC_SIN500_MAX_VPP);
-		//LOG_DBG("ADC Sin 500 Percent Voltage: %f", adc_sin100_percent_voltage);
+		//LOG_DBG("ADC Sin 500 Percent Voltage: %f", adc_sin500_percent_voltage);
 		if (adc_sin500_percent_voltage < 0){
 			adc_sin500_percent_voltage = 0.0;
 		}

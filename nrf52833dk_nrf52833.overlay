@@ -26,12 +26,12 @@
 	pwm_mtr{
 		compatible = "pwm-leds";
 		in1: in_1 {
-			pwms= <&pwm0 0 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			pwms= <&pwm0 0 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
 			label = "Board LED 1 PWM";
 		};
 
 		in2: in_2 {
-			pwms= <&pwm0 1 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			pwms= <&pwm0 1 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
 			label = "Board LED 2 PWM";
 		};
 	};
