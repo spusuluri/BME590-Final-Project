@@ -1,6 +1,5 @@
 /*
 *To-Do List: 
-Note: BLE_DATA_POINTS IS ALREADY DEFINED
 QUESTIONS: 
 5. I can't read voltages beyond 3 V for Battery Vol? 
 7. What is the notification? Is that the actually sending of the bluetooth data?
@@ -9,6 +8,7 @@ QUESTIONS:
 Be sure to take out LOGs that are not used.
  */
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/adc.h>
@@ -21,6 +21,7 @@ Be sure to take out LOGs that are not used.
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/services/bas.h>
+#include "bt_iphone.h"
 
 LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 
@@ -69,7 +70,6 @@ static const struct gpio_dt_spec board_button2 = GPIO_DT_SPEC_GET(DT_ALIAS(butto
 /* Static Variables*/
 static int adc_sin100_mV = 0;
 static int adc_sin500_mV = 0;
-static int adc_vbat_mV = 0;
 static float adc_sin100_RMS = 0.0;
 static float adc_sin500_RMS = 0.0;
 static int adc_sin100_VPP = 0;
@@ -83,6 +83,7 @@ static bool vbus_state = 0;
 /*Callback Declarations*/
 static struct gpio_callback board_button1_cb;
 static struct gpio_callback board_button2_cb;
+static struct bt_conn *current_conn;
 
 
 /*Array Variables*/
@@ -92,6 +93,10 @@ float sin100_RMS_values[BLE_DATA_POINTS]={0.0};
 float sin500_RMS_values[BLE_DATA_POINTS]={0.0};
 
 /*Declarations*/
+void on_connected(struct bt_conn *conn, uint8_t ret);
+void on_disconnected(struct bt_conn *conn, uint8_t reason);
+void on_notif_changed(enum bt_data_notifications_enabled status);
+void on_data_rx(struct bt_conn *conn, const uint8_t *const data, uint16_t len);
 int setup_channels_and_pins(void);
 int check_interfaces_ready(void);
 int check_vbus(void);
@@ -107,6 +112,59 @@ void boardled3_stop(struct k_timer *vbus_timer);
 float adc_sin100_calculate_led_brightness(int val_VPP);
 float adc_sin500_calculate_led_brightness(int val_VPP);
 float calculate_led_brightness(int val_VPP, int min_VPP, int max_VPP);
+
+/* BLE Structures and Callbacks*/
+
+struct bt_conn_cb bluetooth_callbacks = {
+	.connected = on_connected,
+	.disconnected = on_disconnected,
+};
+
+struct bt_remote_srv_cb remote_service_callbacks = {
+	.notif_changed = on_notif_changed,
+	.data_rx = on_data_rx,
+};
+
+void on_data_rx(struct bt_conn *conn, const uint8_t *const data, uint16_t len)
+{
+	// manually append NULL character at the end
+	uint8_t temp_str[len+1];
+	memcpy(temp_str, data, len);
+	temp_str[len] = 0x00;
+
+	LOG_INF("BT received data on conn %p. Len: %d", (void *)conn, len);
+	LOG_INF("Data: %s", temp_str);
+}
+
+void on_connected(struct bt_conn *conn, uint8_t ret) 
+{
+	if (ret) {
+		LOG_ERR("Connection error: %d", ret);
+	}
+	LOG_INF("BT connected");
+	current_conn = bt_conn_ref(conn);
+}
+
+void on_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	LOG_INF("BT disconnected (reason: %d)", reason);
+	if (current_conn) {
+		bt_conn_unref(current_conn);
+		current_conn = NULL;
+	}
+}
+
+void on_notif_changed(enum bt_data_notifications_enabled status)
+{
+	if (status == BT_DATA_NOTIFICATIONS_ENABLED) {
+		LOG_INF("BT notifications enabled");
+	}
+	else {
+		LOG_INF("BT notifications disabled");
+	}
+}
+
+
 /* Define Timers*/
 K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
 K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
@@ -220,6 +278,8 @@ void main(void)
 			k_timer_stop(&vbus_timer);
 			vbus_state = 0;
 		}
+		/* Battery Level */
+		err = bt_bas_set_battery_level(read_adc(adc_vbat));
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 		/* DELETE THIS LINE AFTER TESTING VBAT
