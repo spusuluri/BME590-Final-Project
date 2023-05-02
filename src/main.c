@@ -428,26 +428,6 @@ int setup_channels_and_pins(void){
 	}
 	return 0;
 }
-float adc_sin100_calculate_led_brightness(int val_VPP){
-	/*
-	This function will output the percentage of brightness for the
-	LED for the 100 Hz Sinusoid.
-
-	Inputs: 
-		int val_VPP: Input VPP
-	*/
-	return (float)(1.0/45.0) * (float)val_VPP - 1.0/9.0; 
-}
-float adc_sin500_calculate_led_brightness(int val_VPP){
-	/*
-	This function will output the percentage of brightness for the
-	LED for the 500 Hz Sinusoid.
-
-	Inputs: 
-		int val_VPP: Input VPP
-	*/
-	return (float)(1.0/140.0) * (float)val_VPP - 1.0/14.0; 
-}
 
 float calculate_led_brightness(int val_VPP, int min_VPP, int max_VPP){
 	float slope = ((float)LED_MAX_BRIGHTNESS) / ((float)max_VPP - (float)min_VPP);
