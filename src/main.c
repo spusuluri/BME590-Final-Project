@@ -270,12 +270,12 @@ void main(void)
 	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
 	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
-		adc_sin100_mV = read_adc(adc_sin100);
-		adc_sin500_mV = read_adc(adc_sin500);
 		err = check_vbus();
 		if (err && !vbus_state){
 			vbus_state = 1;
 			k_timer_start(&vbus_timer, K_MSEC(LED3_ON_TIME_MS), K_MSEC(LED3_ON_TIME_MS));
+			k_timer_stop(&adc_sin100_timer);
+			k_timer_stop(&adc_sin500_timer);
 			continue;
 		}
 		if (err && vbus_state){
@@ -283,8 +283,12 @@ void main(void)
 		}
 		if (!err && vbus_state){
 			k_timer_stop(&vbus_timer);
+			k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
+			k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));		
 			vbus_state = 0;
 		}
+		adc_sin100_mV = read_adc(adc_sin100);
+		adc_sin500_mV = read_adc(adc_sin500);
 		/* Battery Level */
 		err = bt_bas_set_battery_level(read_adc(adc_vbat));
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
