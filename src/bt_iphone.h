@@ -14,7 +14,7 @@
 
 /* UUID of the Remote Service */
 // Blur Project ID: 007 (3rd entry)
-// Blur BLE MFG ID = 0x02DF (4th entry)
+// Blur BLE MFG ID = 0x03DF (4th entry)
 #define BT_UUID_REMOTE_SERV_VAL \
 	    BT_UUID_128_ENCODE(0xe2ea0000, 0xe29b, 0x0007, 0x03AF, 0xc8543272fc23)
 
