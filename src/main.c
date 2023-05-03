@@ -1,5 +1,6 @@
 /*
 *To-Do List: 
+REMOVE LOG STATEMENTS IN WHILE LOOP
 QUESTIONS: 
 5. I can't read voltages beyond 3 V for Battery Vol? 
 7. What is the notification? Is that the actually sending of the bluetooth data?
@@ -85,7 +86,7 @@ int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0};
 int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0};
 float sin100_RMS_values[BLE_DATA_POINTS]={0.0};
 float sin500_RMS_values[BLE_DATA_POINTS]={0.0};
-uint8_t bogus_data[BLE_DATA_POINTS]={0};
+uint8_t RMS_values[BLE_DATA_POINTS * 2] = {0};
 
 /*Declarations*/
 void on_connected(struct bt_conn *conn, uint8_t ret);
@@ -180,10 +181,14 @@ void read_adc_sin500(struct k_timer *adc_sin500_timer){
 	sin500_values_mV[ADC_SIN500_SAMPLE_SIZE -1] = adc_sin500_mV;
 }
 void collect_rms_data(struct k_timer *rms_collection_timer){
+	/*
+	The output to the bluetooth will be a hex number and will have
+	*/
 	LOG_DBG("RMS Data Collected");
-	sin100_RMS_values[rms_data_count]=adc_sin100_RMS;
-	sin500_RMS_values[rms_data_count]=adc_sin500_RMS;
-	if(rms_data_count == 4){
+	RMS_values[rms_data_count]= (uint8_t) adc_sin100_RMS;
+	rms_data_count++;
+	RMS_values[rms_data_count]= (uint8_t) adc_sin500_RMS;
+	if(rms_data_count == 9){
 		rms_data_count = 0;
 		k_timer_stop(rms_collection_timer);
 	}
@@ -210,8 +215,14 @@ void board_button1_callback(const struct device *dev, struct gpio_callback *cb, 
 }
 void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
-	LOG_DBG("Button 2 pressed.");
+	int err;
+	err = send_data_notification(current_conn, RMS_values, 1);
+	if (err){
+		LOG_ERR("Could not send BT notification (err: %d)", err);
+	}
+	else{
+		LOG_INF("BT data transmitted.");
+	}
 }
 
 float calculate_rms(int sin_arr[], int sample_size){
@@ -250,23 +261,16 @@ void main(void)
 	if (err < 0){
 		LOG_ERR("Error configuring button 2 callback");
 		return;
-	}	
+	}
+	gpio_pin_set_dt(&board_led1, 1);
+	gpio_pin_set_dt(&board_led2, 1);	
 	/* Bluetooh Setup*/
 	err = bluetooth_init(&bluetooth_callbacks, &remote_service_callbacks);
 	if (err){
 		LOG_ERR("BT init failed (err = %d)", err);
 	}
-	err = send_data_notification(current_conn, bogus_data, 1);
-	if (err){
-		LOG_ERR("Could not send BT notification (err: %d)", err);
-	}
-	else{
-		LOG_INF("BT data transmitted.");
-	}
 	gpio_init_callback(&board_button2_cb, board_button2_callback, BIT(board_button2.pin));
 	gpio_add_callback(board_button2.port, &board_button2_cb);
-	gpio_pin_set_dt(&board_led1, 1);
-	gpio_pin_set_dt(&board_led2, 1);
 	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
 	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
@@ -303,7 +307,7 @@ void main(void)
 		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
-		LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
+		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
 		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 		adc_sin100_percent_voltage = calculate_led_brightness(adc_sin100_VPP, ADC_SIN100_MIN_VPP, ADC_SIN100_MAX_VPP);
 		//LOG_DBG("ADC Sin100 Percent Voltage: %f", adc_sin100_percent_voltage);
