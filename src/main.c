@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN100_SAMPLE_SIZE 1000
 #define ADC_SIN500_SAMPLE_SIZE 1000
 #define VPP_CONV_RMS M_SQRT2
-#define BLE_DATA_POINTS 5
+#define BLE_DATA_POINTS 10
 #define LED_MAX_BRIGHTNESS 1
 #define ADC_SIN100_MIN_VPP 5
 #define ADC_SIN100_MAX_VPP 50
@@ -88,9 +88,7 @@ static struct bt_conn *current_conn;
 /*Array Variables*/
 int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0}; 
 int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0};
-float sin100_RMS_values[BLE_DATA_POINTS]={0.0};
-float sin500_RMS_values[BLE_DATA_POINTS]={0.0};
-uint8_t RMS_values[BLE_DATA_POINTS * 2] = {0};
+uint8_t RMS_values[BLE_DATA_POINTS] = {0};
 
 /*Declarations*/
 void on_connected(struct bt_conn *conn, uint8_t ret);
@@ -193,7 +191,7 @@ void collect_rms_data(struct k_timer *rms_collection_timer){
 	RMS_values[rms_data_count]= (uint8_t) adc_sin100_RMS;
 	rms_data_count++;
 	RMS_values[rms_data_count]= (uint8_t) adc_sin500_RMS;
-	if(rms_data_count == 9){
+	if(rms_data_count == BLE_DATA_POINTS - 1){
 		rms_data_count = 0;
 		k_timer_stop(rms_collection_timer);
 	}

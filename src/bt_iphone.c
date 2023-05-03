@@ -7,7 +7,7 @@ static K_SEM_DEFINE(bt_init_ok, 1, 1);
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME)-1)
-#define BLE_DATA_POINTS 5
+#define BLE_DATA_POINTS 10
 
 
 static uint8_t rms_data[BLE_DATA_POINTS] = {0};
