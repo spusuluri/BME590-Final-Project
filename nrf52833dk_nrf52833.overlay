@@ -22,6 +22,7 @@
 		vbat = &voltbat;
 		button0=&button0;
 		button1=&button1;
+		button2=&button2;
     };
 	pwm_mtr{
 		compatible = "pwm-leds";

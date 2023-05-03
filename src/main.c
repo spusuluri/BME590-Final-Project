@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN100_MAX_VPP 50
 #define ADC_SIN500_MIN_VPP 10
 #define ADC_SIN500_MAX_VPP 150 
+#define NOMINAL_BAT_MV 3300
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -61,6 +62,7 @@ static const struct gpio_dt_spec board_led3 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), g
 /*Buttons*/
 static const struct gpio_dt_spec board_button1 = GPIO_DT_SPEC_GET(DT_ALIAS(button0), gpios);
 static const struct gpio_dt_spec board_button2 = GPIO_DT_SPEC_GET(DT_ALIAS(button1), gpios);
+static const struct gpio_dt_spec board_button3 = GPIO_DT_SPEC_GET(DT_ALIAS(button2), gpios);
 
 /* Static Variables*/
 static int adc_sin100_mV = 0;
@@ -69,6 +71,7 @@ static float adc_sin100_RMS = 0.0;
 static float adc_sin500_RMS = 0.0;
 static int adc_sin100_VPP = 0;
 static int adc_sin500_VPP = 0;
+static int adc_vbat_mV = 0;
 static float adc_sin100_percent_voltage;
 static float adc_sin500_percent_voltage;
 static int rms_data_count = 0;
@@ -78,6 +81,7 @@ static bool vbus_state = 0;
 /*Callback Declarations*/
 static struct gpio_callback board_button1_cb;
 static struct gpio_callback board_button2_cb;
+static struct gpio_callback board_button3_cb;
 static struct bt_conn *current_conn;
 
 
@@ -98,6 +102,7 @@ int check_interfaces_ready(void);
 int check_vbus(void);
 void board_button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
+void board_button3_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 int read_adc(struct adc_dt_spec adc_channel);
 void read_adc_sin100(struct k_timer *adc_sin100_timer);
 void read_adc_sin500(struct k_timer *adc_sin500_timer);
@@ -225,6 +230,22 @@ void board_button2_callback(const struct device *dev, struct gpio_callback *cb, 
 	}
 }
 
+void board_button3_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	/* Callback updates battery level*/
+	int err;
+	float normalized_level;
+	normalized_level = (float)adc_vbat_mV*100.0/(float)NOMINAL_BAT_MV;
+	LOG_INF("Normalized Battery Level: %f", normalized_level);
+	err = bt_bas_set_battery_level((int)normalized_level);
+	if (err){
+		LOG_ERR("BAS set error (err = %d)", err);
+	}
+	else{
+		LOG_DBG("Battery Level set sucessfullly.");
+	}
+}
+
 float calculate_rms(int sin_arr[], int sample_size){
 	float array_sum = 0.0;
 	for (int i = 0; i < sample_size; i++){
@@ -262,6 +283,17 @@ void main(void)
 		LOG_ERR("Error configuring button 2 callback");
 		return;
 	}
+	gpio_init_callback(&board_button2_cb, board_button2_callback, BIT(board_button2.pin));
+	gpio_add_callback(board_button2.port, &board_button2_cb);
+
+	err = gpio_pin_interrupt_configure_dt(&board_button3, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err < 0){
+		LOG_ERR("Error configuring button 3 callback");
+		return;
+	}
+	gpio_init_callback(&board_button3_cb, board_button3_callback, BIT(board_button3.pin));
+	gpio_add_callback(board_button3.port, &board_button3_cb);
+
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);	
 	/* Bluetooh Setup*/
@@ -269,8 +301,6 @@ void main(void)
 	if (err){
 		LOG_ERR("BT init failed (err = %d)", err);
 	}
-	gpio_init_callback(&board_button2_cb, board_button2_callback, BIT(board_button2.pin));
-	gpio_add_callback(board_button2.port, &board_button2_cb);
 	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
 	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
@@ -293,8 +323,7 @@ void main(void)
 		}
 		adc_sin100_mV = read_adc(adc_sin100);
 		adc_sin500_mV = read_adc(adc_sin500);
-		/* Battery Level */
-		err = bt_bas_set_battery_level(read_adc(adc_vbat));
+		adc_vbat_mV = read_adc(adc_vbat);
 		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
 		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
 		/* DELETE THIS LINE AFTER TESTING VBAT
@@ -428,6 +457,11 @@ int setup_channels_and_pins(void){
 	ret = gpio_pin_configure_dt(&board_button2, GPIO_INPUT);
 	if (ret < 0){
 		LOG_ERR("Cannot configure board 2 button.");
+		return ret;
+	}
+	ret = gpio_pin_configure_dt(&board_button3, GPIO_INPUT);
+	if (ret < 0){
+		LOG_ERR("Cannot configure board 3 button.");
 		return ret;
 	}
 	return 0;
