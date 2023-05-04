@@ -326,22 +326,11 @@ void main(void)
 		adc_sin100_mV = read_adc(adc_sin100);
 		adc_sin500_mV = read_adc(adc_sin500);
 		adc_vbat_mV = read_adc(adc_vbat);
-		//LOG_DBG("100 Hz Sinusoid ADC Value (mV): %d", adc_sin100_mV);
-		//LOG_DBG("500 Hz Sinusoid ADC Value (mV): %d", adc_sin500_mV);
-		/* DELETE THIS LINE AFTER TESTING VBAT
-		adc_vbat_mV = read_adc(adc_vbat);
-		LOG_DBG("Battery Voltage ADC Value (mV): %d", adc_vbat_mV);
-		*/
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
-		//LOG_DBG("100 Hz Sinusoid RMS Value: %f", adc_sin100_RMS);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
-		//LOG_DBG("500 Hz Sinusoid RMS Value: %f", adc_sin500_RMS);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
-		//LOG_DBG("100 Hz Sinusoid VPP Value: %d", adc_sin100_VPP);
-		//LOG_DBG("500 Hz Sinusoid VPP Value: %d", adc_sin500_VPP);
 		adc_sin100_percent_voltage = calculate_led_brightness(adc_sin100_VPP, ADC_SIN100_MIN_VPP, ADC_SIN100_MAX_VPP);
-		//LOG_DBG("ADC Sin100 Percent Voltage: %f", adc_sin100_percent_voltage);
 		if (adc_sin100_percent_voltage < 0){
 			adc_sin100_percent_voltage = 0.0;
 		}
@@ -349,7 +338,6 @@ void main(void)
 			adc_sin100_percent_voltage = 1.0;
 		}
 		adc_sin500_percent_voltage = calculate_led_brightness(adc_sin500_VPP, ADC_SIN500_MIN_VPP, ADC_SIN500_MAX_VPP);
-		//LOG_DBG("ADC Sin 500 Percent Voltage: %f", adc_sin500_percent_voltage);
 		if (adc_sin500_percent_voltage < 0){
 			adc_sin500_percent_voltage = 0.0;
 		}
@@ -360,7 +348,7 @@ void main(void)
 		uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
 		err = pwm_set_pulse_dt(&board_led1_drv, board_led1_pulse);
 		if (err) {
-			LOG_ERR("HERE Could not set Board LED 1 (PWM0)");
+			LOG_ERR("Could not set Board LED 1 (PWM0)");
 		}
 		err = pwm_set_pulse_dt(&board_led2_drv, board_led2_pulse);
 		if (err) {
