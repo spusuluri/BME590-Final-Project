@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN500_MIN_VPP 10
 #define ADC_SIN500_MAX_VPP 150 
 #define NOMINAL_BAT_MV 3700
+#define MAX_INPUT_MV 3000
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -85,7 +86,7 @@ static struct bt_conn *current_conn;
 /*Array Variables*/
 int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0}; 
 int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0};
-uint8_t RMS_values[BLE_DATA_POINTS] = {0};
+uint8_t RMS_data[BLE_DATA_POINTS] = {0};
 
 /*Declarations*/
 void on_connected(struct bt_conn *conn, uint8_t ret);
@@ -182,16 +183,21 @@ void read_adc_sin500(struct k_timer *adc_sin500_timer){
 	sin500_values_mV[ADC_SIN500_SAMPLE_SIZE -1] = adc_sin500_mV;
 }
 void collect_rms_data(struct k_timer *rms_collection_timer){
-	/*
-	The output to the bluetooth will be a hex number and will have
+	/*RMS_data array looks like this: 
+	[1 sec 100 Hz sinusoid RMS, 1 sec 500 Hz sinusoid RMS
+	2 sec 100 Hz sinusoid RMS, 2 sec 500 Hz sinusoid RMS
+	3 sec 100 Hz sinusoid RMS, 3 sec 500 Hz sinusoid RMS
+	4 sec 100 Hz sinusoid RMS, 4 sec 500 Hz sinusoid RMS
+	5 sec 100 Hz sinusoid RMS, 5 sec 500 Hz sinusoid RMS]
 	*/
 	LOG_DBG("RMS Data Collected");
-	RMS_values[rms_data_count]= (uint8_t) adc_sin100_RMS;
+	RMS_data[rms_data_count]= (uint8_t) adc_sin100_RMS;
 	rms_data_count++;
-	RMS_values[rms_data_count]= (uint8_t) adc_sin500_RMS;
+	RMS_data[rms_data_count]= (uint8_t) adc_sin500_RMS;
 	if(rms_data_count == BLE_DATA_POINTS - 1){
-		rms_data_count = 0;
 		k_timer_stop(rms_collection_timer);
+		rms_data_count = 0;
+		set_data(RMS_data);
 	}
 	else{
 		rms_data_count++;
@@ -216,11 +222,8 @@ void board_button1_callback(const struct device *dev, struct gpio_callback *cb, 
 }
 void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	for (int i = 0; i < BLE_DATA_POINTS ; i++){
-		LOG_DBG("Array Value: %d", RMS_values[i]);
-	}
 	int err;
-	err = send_data_notification(current_conn, RMS_values, BLE_DATA_POINTS);
+	err = send_data_notification(current_conn, RMS_data, BLE_DATA_POINTS);
 	if (err){
 		LOG_ERR("Could not send BT notification (err: %d)", err);
 	}
@@ -323,7 +326,7 @@ void main(void)
 		}
 		adc_sin100_mV = read_adc(adc_sin100);
 		adc_sin500_mV = read_adc(adc_sin500);
-		adc_vbat_mV = read_adc(adc_vbat);
+		adc_vbat_mV = calculate_ratio_voltage(read_adc(adc_vbat));
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
@@ -478,4 +481,10 @@ int check_vbus() {
         //LOG_DBG("VBUS voltage checked and not detected.");
     }
     return 0;
+}
+
+int calculate_ratio_voltage(int input_bat_mV){
+	/* Scale the voltage between (0,0) and (3,3.7)*/
+	/* where x is the input voltage and y is the battery voltage*/
+	return (int) ((float) NOMINAL_BAT_MV / (float) MAX_INPUT_MV * (float) input_bat_mV);
 }

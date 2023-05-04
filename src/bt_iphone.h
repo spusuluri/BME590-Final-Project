@@ -40,7 +40,7 @@ struct bt_remote_srv_cb {
 	void (*data_rx)(struct bt_conn *conn, const uint8_t *const data, uint16_t len);
 };
 /* Function declarations for bt_iphone.c*/
-void set_data(uint8_t *mic_data);
+void set_data(uint8_t *input_data);
 int send_data_notification(struct bt_conn *conn, uint8_t *value, uint16_t length);
 int bluetooth_init(struct bt_conn_cb *bt_cb, struct bt_remote_srv_cb *remote_cb);
 #endif
