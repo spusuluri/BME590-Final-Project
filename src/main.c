@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(Final_Project, LOG_LEVEL_DBG);
 #define ADC_SIN100_MAX_VPP 50
 #define ADC_SIN500_MIN_VPP 10
 #define ADC_SIN500_MAX_VPP 150 
-#define NOMINAL_BAT_MV 3300
+#define NOMINAL_BAT_MV 3700
 
 #define ADC_DT_SPEC_GET_BY_ALIAS(node_id)                         \
     {                                                            \
@@ -218,8 +218,11 @@ void board_button1_callback(const struct device *dev, struct gpio_callback *cb, 
 }
 void board_button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
+	for (int i = 0; i < BLE_DATA_POINTS ; i++){
+		LOG_DBG("Array Value: %d", RMS_values[i]);
+	}
 	int err;
-	err = send_data_notification(current_conn, RMS_values, 1);
+	err = send_data_notification(current_conn, RMS_values, BLE_DATA_POINTS);
 	if (err){
 		LOG_ERR("Could not send BT notification (err: %d)", err);
 	}
@@ -233,6 +236,7 @@ void board_button3_callback(const struct device *dev, struct gpio_callback *cb, 
 	/* Callback updates battery level*/
 	int err;
 	float normalized_level;
+	LOG_INF("Battery Voltage (mV): %d", adc_vbat_mV);
 	normalized_level = (float)adc_vbat_mV*100.0/(float)NOMINAL_BAT_MV;
 	LOG_INF("Normalized Battery Level: %f", normalized_level);
 	err = bt_bas_set_battery_level((int)normalized_level);

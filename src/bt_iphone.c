@@ -10,7 +10,7 @@ static K_SEM_DEFINE(bt_init_ok, 1, 1);
 #define BLE_DATA_POINTS 10
 
 
-static uint8_t rms_data[BLE_DATA_POINTS] = {0};
+static uint8_t RMS_data[BLE_DATA_POINTS] = {0};
 static struct bt_remote_srv_cb remote_service_callbacks;
 enum bt_data_notifications_enabled notifications_enabled;
 
@@ -62,7 +62,7 @@ void data_ccc_cfg_changed_cb(const struct bt_gatt_attr *attr, uint16_t value)
 
 static ssize_t read_data_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf, uint16_t len, uint16_t offset)
 {
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &rms_data, sizeof(rms_data));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &RMS_data, sizeof(RMS_data));
 }
 
 static ssize_t on_write(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
@@ -113,8 +113,8 @@ int send_data_notification(struct bt_conn *conn, uint8_t *value, uint16_t length
 
 void set_data(uint8_t *data)
 {
-	memcpy(rms_data, data, sizeof(rms_data));
-	LOG_DBG("Data set via memcpy (size = %d).", sizeof(rms_data));
+	memcpy(RMS_data, data, sizeof(RMS_data));
+	LOG_DBG("Data set via memcpy (size = %d).", sizeof(RMS_data));
 }
 
 
