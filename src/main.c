@@ -1,11 +1,8 @@
 /*
 *To-Do List: 
-REMOVE LOG STATEMENTS IN WHILE LOOP
-QUESTIONS: 
-5. I can't read voltages beyond 3 V for Battery Vol? 
-7. What is the notification? Is that the actually sending of the bluetooth data?
-8. How to demonstarte things work? Video? 
-9. Experimentally, test that theoretical value?
+1. Get output of BLE to output correct byte array (Test)
+2. Fix Battery Gain & Reference (Test)
+3. Test maximum sampling frequency
 Be sure to take out LOGs that are not used.
  */
 #include <zephyr/kernel.h>
@@ -169,6 +166,7 @@ K_TIMER_DEFINE(adc_sin100_timer, read_adc_sin100, NULL);
 K_TIMER_DEFINE(adc_sin500_timer, read_adc_sin500, NULL);
 K_TIMER_DEFINE(rms_collection_timer, collect_rms_data, stop_rms_data);
 K_TIMER_DEFINE(vbus_timer, boardled3_toggle, boardled3_stop);
+
 /* Timer Functions*/
 void read_adc_sin100(struct k_timer *adc_sin100_timer){
 	for (int i=0; i < ADC_SIN100_SAMPLE_SIZE - 1; i++){
