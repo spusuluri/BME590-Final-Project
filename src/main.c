@@ -1,6 +1,5 @@
 /*
 *To-Do List: 
-1. Get output of BLE to output correct byte array (Test)
 2. Fix Battery Gain & Reference (Test)
 3. Test maximum sampling frequency
 Be sure to take out LOGs that are not used.
@@ -109,6 +108,7 @@ void boardled3_stop(struct k_timer *vbus_timer);
 float adc_sin100_calculate_led_brightness(int val_VPP);
 float adc_sin500_calculate_led_brightness(int val_VPP);
 float calculate_led_brightness(int val_VPP, int min_VPP, int max_VPP);
+int calculate_ratio_voltage(int input_bat_mV);
 
 /* BLE Structures and Callbacks*/
 
