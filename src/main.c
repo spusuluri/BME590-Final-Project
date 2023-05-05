@@ -1,9 +1,3 @@
-/*
-*To-Do List: 
-2. Fix Battery Gain & Reference (Test)
-3. Test maximum sampling frequency
-Be sure to take out LOGs that are not used.
- */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -47,21 +41,21 @@ static const struct adc_dt_spec adc_sin100 = ADC_DT_SPEC_GET_BY_ALIAS(sin100);
 static const struct adc_dt_spec adc_sin500 = ADC_DT_SPEC_GET_BY_ALIAS(sin500);
 static const struct adc_dt_spec adc_vbat = ADC_DT_SPEC_GET_BY_ALIAS(vbat);
 
-/* PWM Channels*/
+/* PWM Channels */
 static const struct pwm_dt_spec board_led1_drv = PWM_DT_SPEC_GET(DT_ALIAS(drv1)); 
 static const struct pwm_dt_spec board_led2_drv = PWM_DT_SPEC_GET(DT_ALIAS(drv2));
 
-/* LEDs*/
+/* LEDs */
 static const struct gpio_dt_spec board_led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const struct gpio_dt_spec board_led2 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 static const struct gpio_dt_spec board_led3 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
 
-/*Buttons*/
+/* Buttons */
 static const struct gpio_dt_spec board_button1 = GPIO_DT_SPEC_GET(DT_ALIAS(button0), gpios);
 static const struct gpio_dt_spec board_button2 = GPIO_DT_SPEC_GET(DT_ALIAS(button1), gpios);
 static const struct gpio_dt_spec board_button3 = GPIO_DT_SPEC_GET(DT_ALIAS(button2), gpios);
 
-/* Static Variables*/
+/* Static Variables */
 static int adc_sin100_mV = 0;
 static int adc_sin500_mV = 0;
 static float adc_sin100_RMS = 0.0;
@@ -75,19 +69,19 @@ static int rms_data_count = 0;
 static bool usbregstatus;
 static bool vbus_state = 0;
 
-/*Callback Declarations*/
+/* Callback Declarations */
 static struct gpio_callback board_button1_cb;
 static struct gpio_callback board_button2_cb;
 static struct gpio_callback board_button3_cb;
 static struct bt_conn *current_conn;
 
 
-/*Array Variables*/
+/* Array Variables */
 int sin100_values_mV[ADC_SIN100_SAMPLE_SIZE] = {0}; 
 int sin500_values_mV[ADC_SIN500_SAMPLE_SIZE] = {0};
 uint8_t RMS_data[BLE_DATA_POINTS] = {0};
 
-/*Declarations*/
+/* Declarations */
 void on_connected(struct bt_conn *conn, uint8_t ret);
 void on_disconnected(struct bt_conn *conn, uint8_t reason);
 void on_notif_changed(enum bt_data_notifications_enabled status);
@@ -110,7 +104,7 @@ float adc_sin500_calculate_led_brightness(int val_VPP);
 float calculate_led_brightness(int val_VPP, int min_VPP, int max_VPP);
 int calculate_ratio_voltage(int input_bat_mV);
 
-/* BLE Structures and Callbacks*/
+/* BLE Structures and Callbacks */
 
 struct bt_conn_cb bluetooth_callbacks = {
 	.connected = on_connected,
@@ -214,7 +208,7 @@ void boardled3_stop(struct k_timer *vbus_timer){
 	LOG_DBG("LED 3 turned off.");
 	gpio_pin_set_dt(&board_led3, 0);
 }
-/*Callbacks*/
+/* Callbacks */
 void board_button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	LOG_DBG("Button 1 pressed.");
@@ -234,7 +228,7 @@ void board_button2_callback(const struct device *dev, struct gpio_callback *cb, 
 
 void board_button3_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	/* Callback updates battery level*/
+	/* Callback updates battery level */
 	int err;
 	float normalized_level;
 	LOG_INF("Battery Voltage (mV): %d", adc_vbat_mV);
@@ -249,6 +243,7 @@ void board_button3_callback(const struct device *dev, struct gpio_callback *cb, 
 	}
 }
 
+/* RMS calculation function */
 float calculate_rms(int sin_arr[], int sample_size){
 	float array_sum = 0.0;
 	for (int i = 0; i < sample_size; i++){
@@ -272,7 +267,7 @@ void main(void)
 	if (err){
 		LOG_ERR("Error configuring IO pins (err = %d", err);
 	}
-	/* Setup Callbacks*/
+	/* Setup Callbacks */
 	err = gpio_pin_interrupt_configure_dt(&board_button1, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err < 0){
 		LOG_ERR("Error configuring button 1 callback");
@@ -299,7 +294,7 @@ void main(void)
 
 	gpio_pin_set_dt(&board_led1, 1);
 	gpio_pin_set_dt(&board_led2, 1);	
-	/* Bluetooh Setup*/
+	/* Bluetooh Setup */
 	err = bluetooth_init(&bluetooth_callbacks, &remote_service_callbacks);
 	if (err){
 		LOG_ERR("BT init failed (err = %d)", err);
@@ -307,6 +302,7 @@ void main(void)
 	k_timer_start(&adc_sin100_timer, K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN100_SAMPLE_RATE_MSEC));
 	k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));
 	while (1) {
+		/* VBUS Check */
 		err = check_vbus();
 		if (err && !vbus_state){
 			vbus_state = 1;
@@ -324,13 +320,16 @@ void main(void)
 			k_timer_start(&adc_sin500_timer, K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC), K_MSEC(ADC_SIN500_SAMPLE_RATE_MSEC));		
 			vbus_state = 0;
 		}
+		/* Read ADC Channels */
 		adc_sin100_mV = read_adc(adc_sin100);
 		adc_sin500_mV = read_adc(adc_sin500);
 		adc_vbat_mV = calculate_ratio_voltage(read_adc(adc_vbat));
+		/* Calculate RMS & VPP */
 		adc_sin100_RMS = calculate_rms(sin100_values_mV, ADC_SIN100_SAMPLE_SIZE);
 		adc_sin500_RMS = calculate_rms(sin500_values_mV, ADC_SIN500_SAMPLE_SIZE);
 		adc_sin100_VPP = calculate_VPP(adc_sin100_RMS);
 		adc_sin500_VPP = calculate_VPP(adc_sin500_RMS);
+		/* Calculate LED Brightness Percentage */
 		adc_sin100_percent_voltage = calculate_led_brightness(adc_sin100_VPP, ADC_SIN100_MIN_VPP, ADC_SIN100_MAX_VPP);
 		if (adc_sin100_percent_voltage < 0){
 			adc_sin100_percent_voltage = 0.0;
@@ -345,6 +344,7 @@ void main(void)
 		if (adc_sin500_percent_voltage > 1){
 			adc_sin500_percent_voltage = 1.0;
 		}
+		/* Set PWM Pulse */
 		uint32_t board_led1_pulse = board_led1_drv.period * adc_sin100_percent_voltage;
 		uint32_t board_led2_pulse = board_led2_drv.period * adc_sin500_percent_voltage;
 		err = pwm_set_pulse_dt(&board_led1_drv, board_led1_pulse);
