@@ -1,10 +1,9 @@
 .. _blinky-sample:
 
+=================
 BME 590 Final Project
-######
+=================
 
-Author Information
-###
 By: Srisatya Pusuluri
 
 Purpose of Code
