@@ -25,11 +25,12 @@ the testing analysis of the project to learn more.
 Project Configuration and Overlay
 #####
 The following packages are configured in this project: 
-1. `GPIO`
-2. `ADC`
-3. `LOG`
-4. `PWM`
-5. `BT`
+
+* `GPIO`
+* `ADC`
+* `LOG`
+* `PWM`
+* `BT`
 
 Please refer to the `prj.conf` file for the exact syntax.
 
