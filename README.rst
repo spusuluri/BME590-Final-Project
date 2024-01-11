@@ -21,6 +21,9 @@ to allow for the collection of the data as well as the bluetooth sending of the 
 diagram to look at the inputs and outputs of the microcontroller in this project. Also, please refer to
 the testing analysis of the project to learn more.
 
+A KiCad Schematic and the PCB Schenatic for the circuitry used to allow for these signals to be read into the microcontroller
+are shown in the circuitry folder. 
+
 
 Project Configuration and Overlay
 #####
